@@ -1,0 +1,61 @@
+Resumen ejecutivo - Allianz Direct Debit ML Project
+Fecha de ejecución: 2026-06-08 13:59:56
+
+1. Problema de negocio
+El proyecto busca predecir qué contratos tienen mayor probabilidad de utilizar Direct Debit.
+Esto permite priorizar campañas comerciales y operativas hacia contratos con mayor potencial,
+sin realizar una campaña masiva costosa.
+
+2. Modelo seleccionado
+Modelo final: RandomForest_initial
+Justificación: Random Forest fue seleccionado porque funciona bien con datos tabulares mixtos
+(categóricos y numéricos), captura relaciones no lineales, es robusto a valores extremos y ofrece
+importancia de variables, lo cual ayuda a explicar los resultados a líderes técnicos y de negocio.
+
+Mejores hiperparámetros:
+Tuning omitido por parámetro --skip_tuning
+
+3. Métricas de evaluación
+                      model  accuracy  precision   recall  f1_score  roc_auc  average_precision
+       RandomForest_initial  0.985370        1.0 0.930394  0.963942 0.979719           0.970786
+LogisticRegression_baseline  0.985215        1.0 0.929657  0.963547 0.976977           0.967941
+     Baseline_most_frequent  0.789820        0.0 0.000000  0.000000 0.500000           0.210180
+
+Interpretación sugerida:
+- Precision: de los contratos predichos como Direct Debit, qué proporción realmente lo son.
+- Recall: de los contratos que realmente usan Direct Debit, qué proporción detectó el modelo.
+- F1-score: balance entre precision y recall.
+- ROC-AUC: capacidad general del modelo para separar contratos con y sin Direct Debit.
+
+4. Variables más importantes
+                        feature  importance
+              Payments_per_year    0.253462
+      Payment_frequency_Monthly    0.232006
+ Monthly_mandatory_direct_debit    0.223461
+     Payment_frequency_Annually    0.191797
+        Customer_contract_count    0.007750
+       Customer_type_Enterprise    0.007245
+  Customer_type_Physical person    0.006679
+Payment_frequency_Semi-annually    0.006469
+            Customer_age_No age    0.006212
+           Annual_premium_log1p    0.006023
+
+5. Recomendaciones
+- Priorizar campañas en contratos no mensuales que aún no usan Direct Debit y tengan alta probabilidad estimada.
+- Usar las variables de mayor importancia para personalizar mensajes comerciales por frecuencia de pago,
+  producto, tipo de cliente, región y monto de prima.
+- Monitorear desempeño después de la campaña: adopción real, tasa de contacto, conversiones y falsos positivos.
+- Reentrenar el modelo periódicamente con datos nuevos para evitar degradación por cambios en comportamiento.
+- Considerar datos adicionales en el futuro: historial de pagos, antigüedad del cliente, reclamaciones,
+  interacciones comerciales y respuestas a campañas previas.
+
+6. Archivos generados
+- metrics_summary.csv
+- feature_importance.csv
+- feature_importance_top.png
+- confusion_matrix.png
+- roc_curve.png
+- precision_recall_curve.png
+- test_predictions.csv
+- top_direct_debit_campaign_candidates.csv
+- allianz_direct_debit_model.pkl

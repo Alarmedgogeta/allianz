@@ -1,0 +1,124 @@
+feature,importance
+Payment_frequency_Monthly,0.8105134
+Monthly_mandatory_direct_debit,0.15739824
+Payments_per_year,0.018926378
+Payment_frequency_Quarterly,0.0006436276
+Broker_province_BRU,0.0004254707
+Customer_segment_Retail,0.00041290707
+Customer_type_Physical person,0.00041060295
+Payment_frequency_Annually,0.00029041778
+Broker_region_BRU,0.00028781802
+Customer_age_No age,0.00028062143
+Broker_region_WAL,0.0002483319
+Customer_type_Enterprise,0.00024780238
+Product_type_A08 - TRPT AGR,0.00021179482
+Customer_segment_Midcorp,0.0002099408
+Broker_region_FLA,0.00020850291
+Customer_contract_count,0.00019783237
+Customer_region_WAL,0.00018780756
+Broker_province_VWV,0.00018456354
+Broker_province_WNA,0.00017085041
+Customer_age_C = 30-39,0.0001678197
+Line_of_business_A - Motor,0.00016202455
+Customer_province_VLI,0.00016194054
+Broker_province_VAN,0.00015912394
+Broker_province_PTS,0.00015643435
+Broker_contract_count,0.00015538336
+Customer_province_WLG,0.00015164097
+Customer_province_BRU,0.00015114315
+Annual_premium_log1p,0.00015009062
+Broker_province_VLI,0.00014810904
+Customer_province_VWV,0.00014778574
+Customer_province_VBR,0.00014760288
+Customer_urbanization_Rural,0.00014615574
+Customer_age_S = +69,0.00014216556
+Broker_province_VOV,0.00014186319
+Broker_cor,0.00014163478
+Customer_province_VOV,0.00014021045
+Customer_province_WNA,0.00013906759
+Payment_frequency_Semi-annually,0.00013705347
+Broker_urbanization_Urban,0.00013380937
+Customer_province_VAN,0.00013228951
+Customer_age_B = 25-29,0.00012794073
+Product_type_I12 - Commerce,0.00012741993
+Annual_premium,0.0001264455
+Customer_province_WHT,0.00012563782
+Customer_urbanization_Urban,0.000119997945
+Customer_region_BRU,0.000119813805
+Product_type_A05 - CYCLO,0.00011943676
+Product_type_P01 - FAMILY P,0.00011801125
+Broker_province_WHT,0.000115594885
+Same_customer_broker_region,0.00011552095
+Same_customer_broker_province,0.00011550157
+Broker_province_WLG,0.00011493269
+Customer_age_D = 40-69,0.0001139799
+Product_type_I01 - HABITAT.,0.00011301314
+Product_type_A01 - TA/PRIVE,0.0001128246
+"Product_type_A03 - <= 3,5 T",0.00011058593
+Product_type_A02 - TA/PROF.,0.000109999615
+Broker_urbanization_Rural,0.000109214765
+Line_of_business_N - Accident,0.0001070109
+Customer_segment_SME,0.00010677725
+Product_type_N02 - IND JEUN,0.00010575149
+Broker_province_WBR,0.00010408317
+Product_type_A11 - > 12 T,0.00010344765
+"Product_type_A04 - > 3,5 T",0.00010229607
+Broker_province_VBR,9.839993e-05
+Product_type_A09 - TAXI/LOC,9.777226e-05
+Product_type_E16 - Liabilit,9.5300915e-05
+Customer_province_WBR,9.414418e-05
+Line_of_business_I - Property,9.403272e-05
+Product_type_I13 - Horeca,9.331413e-05
+Product_type_E06 - Liabilit,9.248846e-05
+Product_type_N05 - IND CIRC,9.162245e-05
+Line_of_business_E - Liability,9.1070935e-05
+Customer_region_FLA,9.057662e-05
+Product_type_A15 - FLOTTE,8.7569526e-05
+Product_type_A06 - MOTO,8.658188e-05
+Product_type_I22 - BIZ PLAN,8.541878e-05
+Product_type_E04 - RC ENTR.,8.5250664e-05
+Line_of_business_P - Liability,8.359788e-05
+Product_type_I02 - COMM.ART,8.2550585e-05
+Line_of_business_R - Engineering,7.8837256e-05
+Line_of_business_D - Property,7.7326775e-05
+Product_type_N01 - COMPLETE,7.5608536e-05
+Product_type_I04 - AGRICOLE,7.536762e-05
+Product_type_P06 - RC ENSGN,7.428881e-05
+Customer_age_A = 18-24,7.393795e-05
+Product_type_A07 - MARCHAND,7.361066e-05
+Product_type_N06 - IND PRIV,7.277277e-05
+Product_type_D01 - RISQ IND,7.002912e-05
+Product_type_E01 - RC OBJ.,6.421509e-05
+Product_type_R07 - RESTART,6.318731e-05
+Product_type_I05 - BUILDING,6.0871313e-05
+Product_type_I18 - Bureaux,5.95099e-05
+Product_type_I11 - HP Xpert,5.293701e-05
+Product_type_R01 - BRIS MAC,4.9390663e-05
+Product_type_R10 -,4.8378442e-05
+Product_type_E30 - RC PROF.,4.4457727e-05
+Product_type_I23 - BIZ PLAN,4.347764e-05
+Product_type_P16 - ASSOC.&G,4.004841e-05
+Product_type_P20 - RC BATO,3.6517336e-05
+Product_type_A10 - BUS-CAR,0.0
+Product_type_E32 - Cyber Pl,0.0
+Product_type_E31 - D&O Plan,0.0
+Product_type_I72 - BIZ PLAN,0.0
+Product_type_I28 - BIZ PLAN,0.0
+Product_type_I08 - BUR/PROF,0.0
+Product_type_I03 - HORECA,0.0
+Product_type_I83 - Biz Sol.,0.0
+Product_type_I98 - DIVERS,0.0
+Product_type_I73 - BIZ PLAN,0.0
+Product_type_I82 - Biz Solu,0.0
+Product_type_R04 - RSQ CHAN,0.0
+Product_type_R03 - MONT.ESS,0.0
+Product_type_P14 - RC GRD.C,0.0
+Product_type_P13 - RC ORG.C,0.0
+Product_type_P11 - RC GARDE,0.0
+Product_type_P03 - RC PARAM,0.0
+Product_type_P24 - RC CPARA,0.0
+Product_type_P98 - RC DIVER,0.0
+Product_type_P17 - RC ECOLE,0.0
+Product_type_P19 - RC MADIV,0.0
+Product_type_N07 - IND.COLL,0.0
+Product_type_P02 - RC MED.D,0.0

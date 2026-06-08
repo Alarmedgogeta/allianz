@@ -1,0 +1,74 @@
+Resumen ejecutivo - Allianz Direct Debit ML Project con XGBoost
+Fecha de ejecución: 2026-06-08 14:34:31
+
+1. Problema de negocio
+El proyecto predice qué contratos tienen mayor probabilidad de utilizar Direct Debit.
+Esto ayuda a priorizar campañas comerciales hacia contratos con mayor potencial,
+evitar campañas masivas costosas y apoyar la mejora del flujo de efectivo.
+
+2. Modelo principal
+Modelo final seleccionado: XGBoost_no_tuning
+
+Se usó XGBoost sin tuning porque:
+- Es un modelo potente para datos tabulares.
+- Captura relaciones no lineales entre variables.
+- Maneja bien combinaciones de variables numéricas y categóricas después del One-Hot Encoding.
+- Suele tener buen desempeño sin necesidad de entrenar decenas de combinaciones como en GridSearchCV.
+- Es más rápido que hacer tuning completo porque se entrena una sola configuración.
+
+3. Limpieza y preparación
+- Se eliminaron duplicados exactos.
+- Se validó que Is_direct_debit solo tuviera valores 0 y 1.
+- Se convirtieron Annual_premium y Broker_cor a numérico.
+- Se conservó 'No age' como categoría válida porque representa empresas.
+- Se eliminaron IDs crudos antes del entrenamiento para evitar que el modelo memorice contratos o clientes.
+- Se imputaron valores faltantes y se aplicó One-Hot Encoding a variables categóricas.
+
+4. Feature engineering
+- Annual_premium_log1p: reduce efecto de valores extremos en primas.
+- Monthly_mandatory_direct_debit: identifica pagos mensuales, relevantes porque el caso indica que los contratos mensuales usan Direct Debit.
+- Payments_per_year: convierte frecuencia de pago en intensidad anual de pagos.
+- Customer_contract_count y Broker_contract_count: capturan volumen de relación.
+- Same_customer_broker_region/province: capturan cercanía geográfica entre cliente y broker.
+
+5. Métricas de evaluación
+                      model  accuracy  precision   recall  f1_score  roc_auc  average_precision
+          XGBoost_no_tuning  0.985304   0.998253 0.931709  0.963834 0.981796           0.972790
+LogisticRegression_baseline  0.985215   1.000000 0.929657  0.963547 0.976977           0.967941
+     Baseline_most_frequent  0.789820   0.000000 0.000000  0.000000 0.500000           0.210180
+
+Interpretación:
+- Precision: confiabilidad de las predicciones positivas.
+- Recall: capacidad de encontrar contratos que realmente usan Direct Debit.
+- F1-score: balance entre precision y recall.
+- ROC-AUC: capacidad general de separar contratos con y sin Direct Debit.
+
+6. Variables más importantes
+                       feature  importance
+     Payment_frequency_Monthly    0.810513
+Monthly_mandatory_direct_debit    0.157398
+             Payments_per_year    0.018926
+   Payment_frequency_Quarterly    0.000644
+           Broker_province_BRU    0.000425
+       Customer_segment_Retail    0.000413
+ Customer_type_Physical person    0.000411
+    Payment_frequency_Annually    0.000290
+             Broker_region_BRU    0.000288
+           Customer_age_No age    0.000281
+
+7. Resultados buscados
+- Medir si XGBoost supera el baseline y la regresión logística.
+- Identificar variables que más influyen en la adopción de Direct Debit.
+- Generar una lista priorizada de contratos candidatos para campañas.
+- Exportar visualizaciones y métricas listas para presentación.
+
+8. Archivos generados
+- metrics_summary.csv
+- feature_importance.csv
+- feature_importance_top.png
+- confusion_matrix.png
+- roc_curve.png
+- precision_recall_curve.png
+- test_predictions.csv
+- top_direct_debit_campaign_candidates.csv
+- allianz_xgboost_direct_debit_model.pkl
