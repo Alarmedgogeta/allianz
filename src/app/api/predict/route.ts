@@ -1,18 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const RAILWAY_URL = process.env.PREDICT_API_URL;
+const PREDICT_BASE =
+  process.env.PREDICT_API_URL ?? 'http://localhost:8000';
 
 export async function POST(request: NextRequest) {
-  if (!RAILWAY_URL) {
-    return NextResponse.json(
-      { error: 'PREDICT_API_URL environment variable is not set.' },
-      { status: 503 },
-    );
-  }
-
   const body = await request.json();
 
-  const upstream = await fetch(`${RAILWAY_URL}/api/predict`, {
+  const upstream = await fetch(`${PREDICT_BASE}/api/predict`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),

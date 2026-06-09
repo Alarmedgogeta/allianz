@@ -1,3 +1,8 @@
 {
-  "framework": "nextjs"
+  "framework": "nextjs",
+  "functions": {
+    "api/**/*.py": {
+      "excludeFiles": "{node_modules/**,.next/**,prediction-api/**,scripts/**,public/models/data/**,public/models/*.pkl,src/**}"
+    }
+  }
 }

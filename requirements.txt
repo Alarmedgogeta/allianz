@@ -1,3 +1,6 @@
-# Python dependencies for the standalone prediction-api service (deployed to Railway).
-# See prediction-api/requirements.txt for the actual service dependencies.
-# This file is intentionally empty so Vercel does not install ML packages.
+# Vercel Python Function dependencies (api/predict.py)
+# Total installed size: ~185 MB — within Vercel's 500 MB Lambda limit.
+# onnxruntime replaces scikit-learn + xgboost at inference time.
+# Run scripts/export_model.py once locally to generate booster.onnx.
+onnxruntime==1.20.1
+numpy==1.26.4
