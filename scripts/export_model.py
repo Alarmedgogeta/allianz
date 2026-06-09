@@ -6,27 +6,32 @@ Usage (from the project root):
     python scripts/export_model.py
 
 Outputs two files that must be committed to git:
-    public/models/booster.onnx           – XGBoost booster in ONNX format
-    public/models/preprocessor_params.json – fitted OHE categories + scaler params
+    api/model/booster.onnx               – XGBoost booster in ONNX format
+    api/model/preprocessor_params.json   – fitted OHE categories + scaler params
 
 These files let api/predict.py run with only onnxruntime + numpy on Vercel
 (~185 MB total, well under Vercel's 500 MB Lambda limit).
+Model files are placed in api/model/ so Vercel's includeFiles bundles them
+with the function (matches the reference project pattern).
 """
 
 import json
 import os
 import sys
+from pathlib import Path
 
 import joblib
 import numpy as np
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-MODEL_DIR = os.path.join(ROOT, "public", "models")
+ROOT = Path(__file__).resolve().parent.parent
+SRC_MODEL_DIR = ROOT / "public" / "models"
+OUT_MODEL_DIR = ROOT / "api" / "model"
+OUT_MODEL_DIR.mkdir(parents=True, exist_ok=True)
 
-PIPELINE_PATH = os.path.join(MODEL_DIR, "modelo_XGBoost_allianz_dd.pkl")
-ENCODER_PATH = os.path.join(MODEL_DIR, "encoder_XGBoost_allianz_dd.pkl")
-BOOSTER_OUT = os.path.join(MODEL_DIR, "booster.onnx")
-PARAMS_OUT = os.path.join(MODEL_DIR, "preprocessor_params.json")
+PIPELINE_PATH = SRC_MODEL_DIR / "modelo_XGBoost_allianz_dd.pkl"
+ENCODER_PATH = SRC_MODEL_DIR / "encoder_XGBoost_allianz_dd.pkl"
+BOOSTER_OUT = OUT_MODEL_DIR / "booster.onnx"
+PARAMS_OUT = OUT_MODEL_DIR / "preprocessor_params.json"
 
 
 def main() -> None:
@@ -86,7 +91,7 @@ def main() -> None:
     # Quick sanity check
     import onnxruntime as rt  # noqa: PLC0415 – only needed here
 
-    sess = rt.InferenceSession(BOOSTER_OUT)
+    sess = rt.InferenceSession(str(BOOSTER_OUT))
     print(f"ONNX input : {sess.get_inputs()[0].name}  shape={sess.get_inputs()[0].shape}")
     print(f"ONNX outputs: {[o.name for o in sess.get_outputs()]}")
     print("Export complete ✓")
