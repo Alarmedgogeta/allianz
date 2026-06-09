@@ -1,0 +1,6 @@
+Modelo,Exactitud,Precisión,Recall,F1-Score,ROC-AUC
+Árbol de Decisión,0.985,0.9986,0.9298,0.963,0.9747
+Random Forest,0.9852,1.0,0.9297,0.9636,0.9773
+Regresión Logística,0.9852,1.0,0.9297,0.9635,0.9767
+Máquina de Soporte Vectorial,0.9852,1.0,0.9295,0.9635,0.9694
+XGBoost,0.9852,0.9997,0.9298,0.9635,0.9787
