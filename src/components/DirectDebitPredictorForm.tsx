@@ -1,6 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import {
+  type ChangeEvent,
+  type ChangeEventHandler,
+  type FormEvent,
+  useState,
+} from 'react';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -35,14 +40,24 @@ interface TextInputProps {
   placeholder?: string;
   type?: string;
   value: string;
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onChange: ChangeEventHandler<HTMLInputElement>;
 }
 
-function TextInput({ name, label, placeholder, type = 'text', value, onChange }: TextInputProps) {
+function TextInput({
+  name,
+  label,
+  placeholder,
+  type = 'text',
+  value,
+  onChange,
+}: TextInputProps) {
   return (
     <div className="flex flex-col gap-1.5">
       <label htmlFor={name} className="text-sm font-medium text-slate-700">
-        {label} <span className="text-blue-600" aria-hidden="true">*</span>
+        {label}{' '}
+        <span className="text-blue-600" aria-hidden="true">
+          *
+        </span>
       </label>
       <input
         id={name}
@@ -63,14 +78,23 @@ interface SelectInputProps {
   label: string;
   options: string[];
   value: string;
-  onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
+  onChange: ChangeEventHandler<HTMLSelectElement>;
 }
 
-function SelectInput({ name, label, options, value, onChange }: SelectInputProps) {
+function SelectInput({
+  name,
+  label,
+  options,
+  value,
+  onChange,
+}: SelectInputProps) {
   return (
     <div className="flex flex-col gap-1.5">
       <label htmlFor={name} className="text-sm font-medium text-slate-700">
-        {label} <span className="text-blue-600" aria-hidden="true">*</span>
+        {label}{' '}
+        <span className="text-blue-600" aria-hidden="true">
+          *
+        </span>
       </label>
       <div className="relative">
         <select
@@ -110,41 +134,125 @@ function SelectInput({ name, label, options, value, onChange }: SelectInputProps
 const SEGMENTS = ['Midcorp', 'Retail', 'SME'];
 
 const LINES_OF_BUSINESS = [
-  'A - Motor', 'D - Property', 'E - Liability',
-  'I - Property', 'N - Accident', 'P - Liability', 'R - Engineering',
+  'A - Motor',
+  'D - Property',
+  'E - Liability',
+  'I - Property',
+  'N - Accident',
+  'P - Liability',
+  'R - Engineering',
 ];
 
 const PRODUCT_TYPES = [
-  'A01 - TA/PRIVE', 'A02 - TA/PROF.', 'A03 - <= 3,5 T', 'A04 - > 3,5 T',
-  'A05 - CYCLO', 'A06 - MOTO', 'A07 - MARCHAND', 'A08 - TRPT AGR',
-  'A09 - TAXI/LOC', 'A10 - BUS-CAR', 'A11 - > 12 T', 'A15 - FLOTTE',
-  'D01 - RISQ IND', 'E01 - RC OBJ.', 'E04 - RC ENTR.', 'E06 - Liabilit',
-  'E16 - Liabilit', 'E30 - RC PROF.', 'E31 - D&O Plan', 'E32 - Cyber Pl',
-  'I01 - HABITAT.', 'I02 - COMM.ART', 'I03 - HORECA', 'I04 - AGRICOLE',
-  'I05 - BUILDING', 'I08 - BUR/PROF', 'I11 - HP Xpert', 'I12 - Commerce',
-  'I13 - Horeca', 'I18 - Bureaux', 'I22 - BIZ PLAN', 'I23 - BIZ PLAN',
-  'I28 - BIZ PLAN', 'I72 - BIZ PLAN', 'I73 - BIZ PLAN', 'I82 - Biz Solu',
-  'I83 - Biz Sol.', 'I98 - DIVERS', 'N01 - COMPLETE', 'N02 - IND JEUN',
-  'N05 - IND CIRC', 'N06 - IND PRIV', 'N07 - IND.COLL', 'P01 - FAMILY P',
-  'P02 - RC MED.D', 'P03 - RC PARAM', 'P06 - RC ENSGN', 'P11 - RC GARDE',
-  'P13 - RC ORG.C', 'P14 - RC GRD.C', 'P16 - ASSOC.&G', 'P17 - RC ECOLE',
-  'P19 - RC MADIV', 'P20 - RC BATO', 'P24 - RC CPARA', 'P98 - RC DIVER',
-  'R01 - BRIS MAC', 'R03 - MONT.ESS', 'R04 - RSQ CHAN', 'R07 - RESTART', 'R10 -',
+  'A01 - TA/PRIVE',
+  'A02 - TA/PROF.',
+  'A03 - <= 3,5 T',
+  'A04 - > 3,5 T',
+  'A05 - CYCLO',
+  'A06 - MOTO',
+  'A07 - MARCHAND',
+  'A08 - TRPT AGR',
+  'A09 - TAXI/LOC',
+  'A10 - BUS-CAR',
+  'A11 - > 12 T',
+  'A15 - FLOTTE',
+  'D01 - RISQ IND',
+  'E01 - RC OBJ.',
+  'E04 - RC ENTR.',
+  'E06 - Liabilit',
+  'E16 - Liabilit',
+  'E30 - RC PROF.',
+  'E31 - D&O Plan',
+  'E32 - Cyber Pl',
+  'I01 - HABITAT.',
+  'I02 - COMM.ART',
+  'I03 - HORECA',
+  'I04 - AGRICOLE',
+  'I05 - BUILDING',
+  'I08 - BUR/PROF',
+  'I11 - HP Xpert',
+  'I12 - Commerce',
+  'I13 - Horeca',
+  'I18 - Bureaux',
+  'I22 - BIZ PLAN',
+  'I23 - BIZ PLAN',
+  'I28 - BIZ PLAN',
+  'I72 - BIZ PLAN',
+  'I73 - BIZ PLAN',
+  'I82 - Biz Solu',
+  'I83 - Biz Sol.',
+  'I98 - DIVERS',
+  'N01 - COMPLETE',
+  'N02 - IND JEUN',
+  'N05 - IND CIRC',
+  'N06 - IND PRIV',
+  'N07 - IND.COLL',
+  'P01 - FAMILY P',
+  'P02 - RC MED.D',
+  'P03 - RC PARAM',
+  'P06 - RC ENSGN',
+  'P11 - RC GARDE',
+  'P13 - RC ORG.C',
+  'P14 - RC GRD.C',
+  'P16 - ASSOC.&G',
+  'P17 - RC ECOLE',
+  'P19 - RC MADIV',
+  'P20 - RC BATO',
+  'P24 - RC CPARA',
+  'P98 - RC DIVER',
+  'R01 - BRIS MAC',
+  'R03 - MONT.ESS',
+  'R04 - RSQ CHAN',
+  'R07 - RESTART',
+  'R10 -',
 ];
 
-const PAYMENT_FREQUENCIES = ['Monthly', 'Quarterly', 'Semi-annually', 'Annually'];
+const PAYMENT_FREQUENCIES = [
+  'Monthly',
+  'Quarterly',
+  'Semi-annually',
+  'Annually',
+];
 
 const CUSTOMER_AGE_BUCKETS = [
-  'A = 18-24', 'B = 25-29', 'C = 30-39', 'D = 40-69', 'S = +69', 'No age',
+  'A = 18-24',
+  'B = 25-29',
+  'C = 30-39',
+  'D = 40-69',
+  'S = +69',
+  'No age',
 ];
 
 const CUSTOMER_TYPES = ['Enterprise', 'Physical person'];
 
 const REGIONS = ['BRU', 'FLA', 'WAL'];
 
-const CUSTOMER_PROVINCES = ['BRU', 'VAN', 'VBR', 'VLI', 'VOV', 'VWV', 'WBR', 'WHT', 'WLG', 'WNA'];
+const CUSTOMER_PROVINCES = [
+  'BRU',
+  'VAN',
+  'VBR',
+  'VLI',
+  'VOV',
+  'VWV',
+  'WBR',
+  'WHT',
+  'WLG',
+  'WNA',
+];
 
-const BROKER_PROVINCES = ['BRU', 'PTS', 'VAN', 'VBR', 'VLI', 'VOV', 'VWV', 'WBR', 'WHT', 'WLG', 'WNA'];
+const BROKER_PROVINCES = [
+  'BRU',
+  'PTS',
+  'VAN',
+  'VBR',
+  'VLI',
+  'VOV',
+  'VWV',
+  'WBR',
+  'WHT',
+  'WLG',
+  'WNA',
+];
 
 const URBANIZATION = ['Urban', 'Rural'];
 
@@ -182,15 +290,15 @@ export function DirectDebitPredictorForm({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  function handleText(e: React.ChangeEvent<HTMLInputElement>) {
+  function handleText(e: ChangeEvent<HTMLInputElement>) {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   }
 
-  function handleSelect(e: React.ChangeEvent<HTMLSelectElement>) {
+  function handleSelect(e: ChangeEvent<HTMLSelectElement>) {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   }
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setLoading(true);
     setError(null);
@@ -228,7 +336,6 @@ export function DirectDebitPredictorForm({
   return (
     <div className="space-y-5">
       <form onSubmit={handleSubmit} noValidate className="space-y-5">
-
         {/* ── Información de la Póliza ── */}
         <section className="rounded-xl border border-slate-100 bg-white p-6 shadow-sm">
           <h2 className="mb-5 text-xs font-semibold uppercase tracking-widest text-slate-400">
@@ -366,9 +473,25 @@ export function DirectDebitPredictorForm({
         >
           {loading ? (
             <>
-              <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              <svg
+                className="h-4 w-4 animate-spin"
+                viewBox="0 0 24 24"
+                fill="none"
+                aria-hidden="true"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                />
               </svg>
               Calculando…
             </>
@@ -380,12 +503,26 @@ export function DirectDebitPredictorForm({
 
       {/* ── Error ── */}
       {error && (
-        <div role="alert" className="flex gap-3 rounded-xl border border-red-100 bg-red-50 p-4">
-          <svg className="mt-0.5 h-5 w-5 flex-shrink-0 text-red-500" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
-            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+        <div
+          role="alert"
+          className="flex gap-3 rounded-xl border border-red-100 bg-red-50 p-4"
+        >
+          <svg
+            className="mt-0.5 h-5 w-5 flex-shrink-0 text-red-500"
+            fill="currentColor"
+            viewBox="0 0 20 20"
+            aria-hidden="true"
+          >
+            <path
+              fillRule="evenodd"
+              d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+              clipRule="evenodd"
+            />
           </svg>
           <div>
-            <p className="text-sm font-medium text-red-700">Error en la predicción</p>
+            <p className="text-sm font-medium text-red-700">
+              Error en la predicción
+            </p>
             <p className="mt-0.5 text-sm text-red-600">{error}</p>
           </div>
         </div>
@@ -393,21 +530,45 @@ export function DirectDebitPredictorForm({
 
       {/* ── Resultado ── */}
       {result && (
-        <div className={`rounded-xl border p-6 shadow-sm ${result.is_direct_debit ? 'border-blue-100 bg-blue-50' : 'border-slate-100 bg-white'}`}>
+        <div
+          className={`rounded-xl border p-6 shadow-sm ${result.is_direct_debit ? 'border-blue-100 bg-blue-50' : 'border-slate-100 bg-white'}`}
+        >
           <div className="mb-5 flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-slate-700">Resultado de la Predicción</h2>
-            <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${result.is_direct_debit ? 'bg-blue-600 text-white' : 'bg-slate-200 text-slate-600'}`}>
+            <h2 className="text-sm font-semibold text-slate-700">
+              Resultado de la Predicción
+            </h2>
+            <span
+              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${result.is_direct_debit ? 'bg-blue-600 text-white' : 'bg-slate-200 text-slate-600'}`}
+            >
               {result.is_direct_debit ? (
                 <>
-                  <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
-                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  <svg
+                    className="h-3 w-3"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                    aria-hidden="true"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                      clipRule="evenodd"
+                    />
                   </svg>
                   Domiciliación
                 </>
               ) : (
                 <>
-                  <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
-                    <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                  <svg
+                    className="h-3 w-3"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                    aria-hidden="true"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                      clipRule="evenodd"
+                    />
                   </svg>
                   Sin Domiciliación
                 </>
@@ -422,9 +583,13 @@ export function DirectDebitPredictorForm({
             </div>
             <div className="rounded-lg border border-slate-100 bg-white p-4">
               <p className="text-xs text-slate-500 mb-1">Clase</p>
-              <p className="text-3xl font-bold text-slate-900">{result.prediction}</p>
+              <p className="text-3xl font-bold text-slate-900">
+                {result.prediction}
+              </p>
               <p className="text-xs text-slate-400 mt-0.5">
-                {result.prediction === 1 ? 'Adoptará domiciliación' : 'No adoptará domiciliación'}
+                {result.prediction === 1
+                  ? 'Adoptará domiciliación'
+                  : 'No adoptará domiciliación'}
               </p>
             </div>
           </div>

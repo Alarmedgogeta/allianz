@@ -47,6 +47,10 @@ const eslintConfig = defineConfig([
       'react/react-in-jsx-scope': 'off',
       // TypeScript handles prop validation
       'react/prop-types': 'off',
+      // TypeScript default parameters replace defaultProps
+      'react/require-default-props': 'off',
+      // Named handler functions in JSX props are fine (avoids useCallback overkill)
+      'react/jsx-no-bind': 'off',
       // Allow .ts/.tsx imports without file extensions
       'import/extensions': 'off',
       // tsconfig path aliases are not resolvable by eslint-plugin-import
