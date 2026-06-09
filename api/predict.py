@@ -7,11 +7,34 @@ from http.server import BaseHTTPRequestHandler
 from pathlib import Path
 from typing import Any
 
-import numpy as np
-import onnxruntime as rt
+import joblib
+import pandas as pd
 
 
-# ── Model directory (try co-located api/model/ first, then project-relative) ──
+FEATURE_COLS = [
+    "Customer_segment",
+    "Line_of_business",
+    "Product_type",
+    "Annual_premium",
+    "Premium_log",
+    "Payment_frequency",
+    "Customer_age",
+    "Customer_type",
+    "Customer_region",
+    "Customer_province",
+    "Broker_region",
+    "Broker_province",
+    "Broker_cor",
+    "Customer_urbanization",
+    "Broker_urbanization",
+    "Is_enterprise",
+    "Customer_Broker_same_region",
+    "Customer_Broker_same_province",
+    "Broker_profitable",
+    "Is_monthly_payment",
+]
+
+
 def get_model_dir() -> Path:
     candidates = [
         Path(__file__).resolve().parent / "model",
@@ -19,7 +42,7 @@ def get_model_dir() -> Path:
         Path.cwd() / "public" / "models",
     ]
     for candidate in candidates:
-        if (candidate / "booster.onnx").exists():
+        if (candidate / "modelo_XGBoost_allianz_dd.pkl").exists():
             return candidate
     return candidates[0]
 
@@ -28,21 +51,11 @@ MODEL_DIR = get_model_dir()
 
 
 @lru_cache(maxsize=1)
-def load_params() -> dict[str, Any]:
-    with open(MODEL_DIR / "preprocessor_params.json", encoding="utf-8") as fh:
-        return json.load(fh)
+def load_pipeline():
+    return joblib.load(MODEL_DIR / "modelo_XGBoost_allianz_dd.pkl")
 
 
-@lru_cache(maxsize=1)
-def load_session() -> tuple[rt.InferenceSession, str]:
-    session = rt.InferenceSession(str(MODEL_DIR / "booster.onnx"))
-    input_name = session.get_inputs()[0].name
-    return session, input_name
-
-
-# ── Inference helpers ─────────────────────────────────────────────────────────
-
-def derive_features(body: dict[str, Any]) -> dict[str, Any]:
+def build_features(body: dict[str, Any]) -> pd.DataFrame:
     annual_premium = float(body["Annual_premium"])
     customer_type = body["Customer_type"]
     customer_region = body["Customer_region"]
@@ -52,52 +65,43 @@ def derive_features(body: dict[str, Any]) -> dict[str, Any]:
     broker_cor = float(body["Broker_cor"])
     payment_frequency = body["Payment_frequency"]
 
-    return {
-        **body,
+    row = {
+        "Customer_segment": body["Customer_segment"],
+        "Line_of_business": body["Line_of_business"],
+        "Product_type": body["Product_type"],
+        "Annual_premium": annual_premium,
         "Premium_log": math.log1p(annual_premium),
-        "Is_enterprise": 1.0 if customer_type == "Enterprise" else 0.0,
-        "Customer_Broker_same_region": 1.0 if customer_region == broker_region else 0.0,
-        "Customer_Broker_same_province": 1.0 if customer_province == broker_province else 0.0,
-        "Broker_profitable": 1.0 if broker_cor < 100 else 0.0,
-        "Is_monthly_payment": 1.0 if payment_frequency.lower() == "monthly" else 0.0,
+        "Payment_frequency": payment_frequency,
+        "Customer_age": body["Customer_age"],
+        "Customer_type": customer_type,
+        "Customer_region": customer_region,
+        "Customer_province": customer_province,
+        "Broker_region": broker_region,
+        "Broker_province": broker_province,
+        "Broker_cor": broker_cor,
+        "Customer_urbanization": body["Customer_urbanization"],
+        "Broker_urbanization": body["Broker_urbanization"],
+        "Is_enterprise": 1 if customer_type == "Enterprise" else 0,
+        "Customer_Broker_same_region": 1 if customer_region == broker_region else 0,
+        "Customer_Broker_same_province": 1 if customer_province == broker_province else 0,
+        "Broker_profitable": 1 if broker_cor < 100 else 0,
+        "Is_monthly_payment": 1 if payment_frequency.lower() == "monthly" else 0,
     }
 
-
-def preprocess(data: dict[str, Any]) -> np.ndarray:
-    params = load_params()
-
-    cat_features: list[float] = []
-    for col in params["cat_columns"]:
-        cats = params["categories"][col]
-        val = str(data.get(col, ""))
-        cat_features.extend(1.0 if str(c) == val else 0.0 for c in cats)
-
-    num_features: list[float] = []
-    for i, col in enumerate(params["num_columns"]):
-        val = float(data.get(col, 0.0))
-        mean = params["scaler_mean"][i]
-        std = params["scaler_std"][i] or 1.0
-        num_features.append((val - mean) / std)
-
-    return np.array([cat_features + num_features], dtype=np.float32)
+    return pd.DataFrame([row], columns=FEATURE_COLS)
 
 
 def predict(body: dict[str, Any]) -> dict[str, Any]:
-    enriched = derive_features(body)
-    x = preprocess(enriched)
-    session, input_name = load_session()
-    outputs = session.run(None, {input_name: x})
-    # XGBoost ONNX: outputs[0] = label, outputs[1] = probabilities
-    prediction = int(outputs[0][0])
-    probability = float(outputs[1][0][1])
+    pipeline = load_pipeline()
+    df = build_features(body)
+    prediction = int(pipeline.predict(df)[0])
+    probability = float(pipeline.predict_proba(df)[0][1])
     return {
         "prediction": prediction,
         "probability": round(probability, 4),
         "is_direct_debit": bool(prediction),
     }
 
-
-# ── Vercel handler helpers (mirrors the reference repo pattern) ───────────────
 
 def json_response(h: BaseHTTPRequestHandler, payload: dict[str, Any], status: int = 200) -> None:
     body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
@@ -133,9 +137,7 @@ def read_json_body(h: BaseHTTPRequestHandler) -> dict[str, Any]:
     return payload
 
 
-# ── Vercel entrypoint ─────────────────────────────────────────────────────────
-
-class handler(BaseHTTPRequestHandler):  # noqa: N801 – Vercel requires lowercase "handler"
+class handler(BaseHTTPRequestHandler):  # noqa: N801 – Vercel requires lowercase
 
     def do_OPTIONS(self) -> None:
         handle_options(self)

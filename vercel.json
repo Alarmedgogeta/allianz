@@ -3,8 +3,8 @@
   "framework": "nextjs",
   "functions": {
     "api/*.py": {
-      "includeFiles": "api/model/**",
-      "excludeFiles": "{node_modules/**,.next/**,prediction-api/**,scripts/**,public/models/*.pkl,src/**,**/__pycache__/**}"
+      "includeFiles": "api/model/*.pkl",
+      "excludeFiles": "{node_modules/**,.next/**,prediction-api/**,scripts/**,src/**,**/__pycache__/**}"
     }
   }
 }

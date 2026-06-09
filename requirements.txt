@@ -1,6 +1,5 @@
-# Vercel Python Function dependencies (api/predict.py)
-# Total installed size: ~185 MB — within Vercel's 500 MB Lambda limit.
-# onnxruntime replaces scikit-learn + xgboost at inference time.
-# Run scripts/export_model.py once locally to generate booster.onnx.
-onnxruntime==1.20.1
-numpy==1.26.4
+joblib==1.5.3
+numpy==2.4.4
+pandas==3.0.3
+scikit-learn==1.8.0
+xgboost==2.1.3
