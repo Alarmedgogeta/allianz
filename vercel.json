@@ -1,10 +1,4 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "framework": "nextjs",
-  "functions": {
-    "api/*.py": {
-      "includeFiles": "api/model/*.pkl",
-      "excludeFiles": "{node_modules/**,.next/**,prediction-api/**,scripts/**,src/**,**/__pycache__/**}"
-    }
-  }
+  "framework": "nextjs"
 }
