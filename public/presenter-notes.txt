@@ -1,0 +1,444 @@
+================================================================================
+ALLIANZ DIRECT DEBIT ML MODEL — PRESENTER GUIDE
+Technical Reviewer Audience
+================================================================================
+
+GENERAL TIPS
+------------
+- Audience: Technical reviewers (data team, analytics leads, possibly IT/Finance)
+- Tone: Precise, data-driven, no hand-waving. This audience will push back
+  if numbers don't add up or methodology is glossed over.
+- Pacing: ~3-4 minutes per slide, ~50-60 minutes total for 22 slides
+  (including Q&A slide).
+- Advance slides using arrow keys or spacebar.
+- URL: Open /presentation.html in the browser (e.g. http://localhost:3000/presentation.html)
+
+================================================================================
+SLIDE 1 — TITLE
+================================================================================
+GOAL: Set the scope and signal that this is a rigorous, production-oriented project.
+
+KEY IDEAS TO CONVEY:
+- "Today we are reviewing a complete CRISP-DM classification project — not a
+  proof of concept, but a pipeline ready for operational scoring."
+- "We analysed 452,222 real Allianz Benelux insurance contracts."
+- "We compared five different machine learning algorithms and selected XGBoost
+  as the production model based on ROC-AUC."
+- Mention the 4× conversion lift chip as a teaser for the business payoff.
+
+DO NOT: Jump into methodology yet. This slide is the hook.
+
+================================================================================
+SLIDE 2 — EXECUTIVE SUMMARY
+================================================================================
+GOAL: Land the business problem immediately before going into any technical detail.
+
+KEY IDEAS TO CONVEY:
+- "Allianz currently captures only 21% direct debit adoption. The market
+  average is 65%. That is a 44-percentage-point operational gap."
+- "Direct debit is not a preference feature — it directly improves cash-flow
+  predictability, reduces collection costs, and shortens the receivables cycle."
+- "We built a scoring engine that ranks all non-DD contracts by their predicted
+  probability of conversion. The top 5,000 contracts are 4 times more likely
+  to convert than the average portfolio contract."
+- Reassure the audience: "The full methodology and validation are in the
+  following slides — this is just the bottom line."
+
+ANTICIPATED QUESTION: "How do you know it is 65% market average?"
+ANSWER: This is the industry benchmark figure cited in the project brief.
+It is the business sponsor's baseline, not a figure the model produced.
+
+================================================================================
+SLIDE 3 — SECTION BREAK: DATA UNDERSTANDING
+================================================================================
+GOAL: Brief transition. Use it to set context before the data slides.
+
+SAY: "Before we look at results, let's walk through what the data looks like
+and what the EDA revealed — because there are two findings that will become
+critical when we discuss model performance."
+
+================================================================================
+SLIDE 4 — THE DATASET AT SCALE
+================================================================================
+GOAL: Establish dataset credibility and data quality process.
+
+KEY IDEAS TO CONVEY:
+- "452,000+ rows is production scale. This is not a small academic dataset."
+- "Each row is a contract — one customer can appear multiple times across
+  different products. This is important because we are not modelling customers,
+  we are modelling contracts."
+- "Data quality was strong: less than 0.001% missing values. 64 duplicate rows
+  were removed."
+- "Two data quality interventions worth noting:
+    1. Broker_cor had outlier values as extreme as 6 × 10^16 — clearly an
+       extraction error. We capped at the 95th percentile as a pragmatic fix.
+    2. Annual_premium is heavily right-skewed (max ~3M EUR vs. mean ~513 EUR).
+       We applied a log-transform to stabilise the distribution for the models."
+- "ID columns — contract number, customer ID, broker ID — were excluded from
+  features. Including them would cause memorisation, not generalisation."
+
+================================================================================
+SLIDE 5 — CLASS IMBALANCE
+================================================================================
+GOAL: Explain why this is a hard classification problem and how we addressed it.
+
+KEY IDEAS TO CONVEY:
+- "The target variable is imbalanced: 79% of contracts do NOT have direct debit,
+  21% do. That is a roughly 3.76:1 imbalance."
+- "The naive baseline — a model that always predicts 'no direct debit' —
+  would achieve 79% accuracy without learning anything useful. Accuracy is
+  therefore the wrong metric here."
+- "We handled imbalance in two ways:
+    1. class_weight='balanced' for all scikit-learn classifiers — this
+       automatically adjusts loss weights inversely proportional to class frequency.
+    2. scale_pos_weight=3.76 for XGBoost — the native parameter that serves
+       the same purpose."
+- "Our primary evaluation metrics were ROC-AUC, F1-Score, and Recall.
+  These are robust to class imbalance. Accuracy is reported only for completeness."
+
+ANTICIPATED QUESTION: "Why not use SMOTE or oversampling?"
+ANSWER: "With 360K+ training rows, resampling introduces memory overhead and
+risk of data leakage if applied before the train/test split. Class weighting
+achieves the same correction without those risks, and it is more efficient
+at this scale."
+
+================================================================================
+SLIDE 6 — EDA KEY FINDINGS
+================================================================================
+GOAL: Preview the two most important signals — payment frequency dominance
+and the leakage risk — before the modelling section.
+
+KEY IDEAS TO CONVEY:
+- "The EDA revealed six patterns worth highlighting for the modelling decisions."
+- "Payment frequency is the single dominant signal. Monthly contracts are
+  nearly universally on direct debit — but this is because Allianz mandates it
+  for monthly payers. This is a business rule masquerading as a predictive feature.
+  We will address this explicitly in the leakage analysis slide."
+- "Customer segment, type, geography, and line of business all show meaningful
+  variation in DD adoption rates — these are the real behavioural signals
+  we want the model to learn."
+- "Note that Annual_premium was log-transformed precisely because of the
+  extreme skew we saw in EDA."
+
+================================================================================
+SLIDE 7 — SECTION BREAK: MODELLING
+================================================================================
+GOAL: Transition to the technical core of the presentation.
+
+SAY: "Now let's walk through the pipeline architecture and the five models
+we trained. I want to give the technical rationale for each one — why we
+included it and what its trade-offs are."
+
+================================================================================
+SLIDE 8 — FEATURE ENGINEERING & PIPELINE
+================================================================================
+GOAL: Show the pipeline is clean, reproducible, and deployment-ready.
+
+KEY IDEAS TO CONVEY:
+- "We created three engineered features:
+    - Premium_log: the log-transform of annual premium.
+    - Is_monthly_payment: a binary flag to make the monthly payment signal
+      explicit for tree-based models.
+    - Broker_profitable: a binary flag when the broker's combined ratio
+      is below 100% — a proxy for broker quality."
+- "The preprocessing pipeline uses scikit-learn's ColumnTransformer with two
+  branches: categorical (impute → one-hot encode) and numerical (impute → scale)."
+- "Critically, all preprocessing is inside the pipeline object. There is no
+  data leakage from fit-transforming on the full dataset — the preprocessor
+  is fit only on the training set."
+- "The train/test split was 80/20 with stratification to preserve class ratios:
+  361,725 training rows and 90,432 test rows."
+
+ANTICIPATED QUESTION: "Why not use target encoding for high-cardinality categoricals?"
+ANSWER: "One-hot encoding was chosen for interpretability and compatibility
+across all five models. Target encoding was considered but introduces leakage
+risk if not handled carefully in cross-validation. With the cardinalities
+present in this dataset, OHE was tractable."
+
+================================================================================
+SLIDE 9 — FIVE CLASSIFIERS
+================================================================================
+GOAL: Justify the model selection strategy to a technical audience.
+
+KEY IDEAS TO CONVEY:
+- "We deliberately chose models from different families to get a diagnostic
+  picture of the problem structure."
+- "Decision Tree: interpretability baseline. The learned decision rules can be
+  shared with brokers and business teams as plain English logic."
+- "Random Forest: the ensemble upgrade from the Decision Tree. Reduces
+  variance through 200-tree averaging and provides feature importances."
+- "Logistic Regression: the gold-standard linear baseline. Coefficients are
+  directly interpretable as odds ratios, making it easy to explain to Finance."
+- "SVM: computationally infeasible on 360K+ rows at full scale, so we trained
+  on a stratified 50K sample. Included for theoretical completeness."
+- "XGBoost: the expected winner on tabular data. Gradient boosting corrects
+  residuals iteratively and handles sparse OHE features efficiently.
+  scale_pos_weight handles the class imbalance natively."
+
+================================================================================
+SLIDE 10 — SECTION BREAK: EVALUATION
+================================================================================
+GOAL: Brief pause before the numbers. Remind audience of the metrics framework.
+
+SAY: "We now have results from all five models on the held-out 90K test set.
+Before I show the table, let me remind you: we are optimising for ROC-AUC
+as the primary metric, followed by F1-Score. Accuracy is shown but is not
+the decision criterion."
+
+================================================================================
+SLIDE 11 — MODEL COMPARISON TABLE
+================================================================================
+GOAL: Present results clearly and explain the selection logic.
+
+KEY IDEAS TO CONVEY:
+- "All five models cluster at ~98.5% accuracy and ~96.3% F1. This tight
+  clustering is expected — and actually a sign that the problem has strong
+  structural signal."
+- "On ROC-AUC, XGBoost leads at 97.87%, followed by Random Forest at 97.73%.
+  The gap is modest but consistent."
+- "The selection decision: XGBoost is recommended as the production scoring model
+  because it has the highest ROC-AUC and is the most appropriate architecture
+  for tabular, sparse-encoded data at this scale."
+- "Decision Tree remains valuable as the explainability companion —
+  its rules can be translated into plain business logic for broker training,
+  even though its AUC is slightly lower."
+- "SVM, trained on only 50K rows, cannot be fairly compared at full scale.
+  It is included for reference, not production."
+
+ANTICIPATED QUESTION: "Why not just pick Random Forest? Its F1 is marginally
+better than XGBoost."
+ANSWER: "F1 differences at the fourth decimal place are not operationally
+significant. ROC-AUC is the decisive tie-breaker because it reflects the
+quality of probability calibration across the full range of thresholds.
+XGBoost leads on this metric."
+
+================================================================================
+SLIDE 12 — DATA LEAKAGE DISCOVERY
+================================================================================
+GOAL: This is one of the most technically important slides. Show that the team
+identified, isolated, and quantified the leakage — and that it was handled
+responsibly.
+
+KEY IDEAS TO CONVEY:
+- "Payment_frequency_Monthly appears as the dominant feature in importance
+  rankings. This seems like a great predictor — until you understand why."
+- "Allianz's business rule: monthly payment contracts MUST use direct debit.
+  This is not a model learning a pattern — it is the model memorising a rule
+  that already exists in the data. This is textbook data leakage."
+- "To quantify the leakage, we ran Strategy B: a parallel model with
+  Payment_frequency and Is_monthly_payment excluded entirely."
+- "The result: ROC-AUC dropped from 97.87% to 75.56%. That 22-point drop
+  is the 'free lunch' the business rule was handing the model."
+- "75.56% AUC is still meaningfully above random (50%) — this is the genuine
+  signal from customer demographics, geography, segment, and product features."
+- "Strategy A is still valid for operational scoring of the full portfolio,
+  because payment frequency IS known for existing contracts. Strategy B is
+  the right model for understanding voluntary adoption drivers."
+
+ANTICIPATED QUESTION: "Does this invalidate Strategy A?"
+ANSWER: "No. For the scoring use case — prioritising which existing non-DD
+contracts to target — we know the payment frequency already. Strategy A's
+high AUC is operationally valid for that task. Strategy B gives us insight
+into the non-frequency drivers, which is useful for campaign messaging."
+
+================================================================================
+SLIDE 13 — FEATURE IMPORTANCE
+================================================================================
+GOAL: Connect model internals to business intuition.
+
+KEY IDEAS TO CONVEY:
+- "Payment frequency dominates — we have discussed why."
+- "After controlling for it, the meaningful secondary features are:
+    - Customer segment (Retail/SME/Mid-Corp): confirms campaigns need
+      to be differentiated by segment.
+    - Customer type (individual vs. business): businesses resist DD.
+    - Line of business: Auto and Property have structural DD advantages.
+    - Log-premium: premium size has some predictive power, direction TBD
+      by coefficient sign in Logistic Regression.
+    - Broker profitability: high-performing brokers actively promote DD.
+    - Customer region: geographic patterns exist in Belgian adoption rates."
+- "These features become the messaging pillars for campaign design."
+- "Note: SHAP analysis is listed as a next step — it would give us
+  individual contract-level explanations, not just global importance ranking."
+
+================================================================================
+SLIDE 14 — SECTION BREAK: RECOMMENDATIONS
+================================================================================
+GOAL: Transition from technical evaluation to business action.
+
+SAY: "The model is validated. Now let's talk about how to turn these scores
+into a real campaign that generates measurable ROI."
+
+================================================================================
+SLIDE 15 — PORTFOLIO SCORING
+================================================================================
+GOAL: Show the operational output and quantify the lift.
+
+KEY IDEAS TO CONVEY:
+- "Every non-DD contract in the portfolio was scored by the production model."
+- "The top 5,000 contracts have a predicted conversion probability of 24.97%."
+- "The full portfolio baseline is 6.22%."
+- "That is a 4× lift — meaning if we target the top 5,000 instead of a random
+  5,000, we expect roughly 4 times as many conversions per euro of campaign spend."
+- "This is the core business case for model-driven targeting vs. mass outreach."
+- "The scoring output can be integrated into broker dashboards so that
+  each broker sees their top-ranked clients for a DD conversation at renewal."
+
+================================================================================
+SLIDE 16 — CONTROLLED PILOT
+================================================================================
+GOAL: Explain why a controlled pilot is the right first step before full rollout.
+
+KEY IDEAS TO CONVEY:
+- "We recommend a 90-day A/B pilot before committing to full portfolio rollout."
+- "Treatment group: top 5,000 contracts by model score. They receive targeted
+  outreach (email, broker call, app notification)."
+- "Control group: 5,000 randomly selected non-DD contracts. They receive
+  nothing."
+- "After 90 days, we compare actual conversion rates between the two groups.
+  The delta is the true attribution of the model."
+- "Why is this important? Because our model predicts propensity — not causal
+  uplift. Some high-probability contracts might have converted anyway.
+  The pilot separates propensity from incremental lift."
+- "The pilot output also allows us to calibrate the decision threshold.
+  Is 50% the right cut-off? Or 30%? The response data will tell us."
+- "The pilot data becomes the training set for a Phase 2 uplift model."
+
+ANTICIPATED QUESTION: "What conversion rate are you expecting?"
+ANSWER: "We are not committing to a point estimate before the pilot —
+that would be forecasting, not science. The model predicts relative ranking.
+The pilot will give us the absolute conversion rates we need for ROI calculation."
+
+================================================================================
+SLIDE 17 — SEGMENT STRATEGY
+================================================================================
+GOAL: Translate model insights into actionable campaign differentiation.
+
+KEY IDEAS TO CONVEY:
+- "One campaign for all customers is inefficient. The EDA and feature
+  importance tell us the messaging and channel must differ by segment."
+- "Retail individuals (non-monthly): most natural conversion target.
+  Digital outreach works. Emphasise convenience and automatic on-time payments."
+- "SME and Mid-Corp: driven by finance/AP teams. Approach via account
+  managers and brokers. Messaging should emphasise admin efficiency and
+  payment certainty — not convenience."
+- "Quarterly payers: already accept periodic automatic payment. At renewal,
+  a single-click upgrade to direct debit is a very low-friction ask."
+- "On broker engagement: the model can generate a per-broker DD conversion
+  scorecard. Brokers who see they are below market benchmark become
+  motivated advocates for the campaign."
+
+================================================================================
+SLIDE 18 — SECTION BREAK: LIMITATIONS
+================================================================================
+GOAL: Signal intellectual honesty before presenting the limitations.
+
+SAY: "Every model has limitations, and it is important we are explicit about
+them with this audience before moving to next steps."
+
+================================================================================
+SLIDE 19 — KNOWN LIMITATIONS
+================================================================================
+GOAL: Present limitations clearly and show each has been thought through.
+
+KEY IDEAS TO CONVEY:
+- "Limitation 1 — Payment frequency leakage: Already discussed. Strategy A
+  is valid for its use case. Strategy B is preserved for voluntary adoption insight."
+- "Limitation 2 — Static snapshot: This dataset represents one moment in time.
+  The model will degrade as the portfolio evolves. Quarterly retraining is
+  budgeted into the next steps."
+- "Limitation 3 — No response history: We predict propensity, not causal lift.
+  The pilot solves this by generating labelled response data."
+- "Limitation 4 — Broker_cor data quality: The extreme outlier values (up to
+  6 × 10^16) indicate a data extraction or encoding error upstream.
+  Our P95 cap is pragmatic. The data engineering team should investigate
+  the root cause in the source system."
+- "Limitation 5 — SVM scalability: The SVM was trained on 50K rows due to
+  computational constraints. Its evaluation is informative, not definitive,
+  at full portfolio scale."
+
+TONE: State these confidently. Identifying limitations proactively
+builds more credibility than omitting them.
+
+================================================================================
+SLIDE 20 — ROADMAP TO PRODUCTION
+================================================================================
+GOAL: Show there is a clear, prioritised path from current state to full deployment.
+
+KEY IDEAS TO CONVEY:
+- "Step 1: SHAP analysis. This gives us individual-level explanations —
+  'this contract scores high because of X and Y' — which is essential
+  for broker conversations and for regulatory auditability."
+- "Step 2: Uplift modelling. After the pilot, we fit a causal model on
+  the A/B outcomes. This separates propensity from incremental uplift."
+- "Step 3: Hyperparameter tuning. GridSearchCV or Optuna on XGBoost.
+  Currently using sensible defaults — tuning may yield 1-2 additional
+  AUC points."
+- "Step 4: API deployment. The joblib pipeline is ready. Wrapping it in
+  FastAPI or deploying to Azure ML / AWS SageMaker is a 2-4 week
+  engineering task."
+- "Step 5: Quarterly retraining schedule. New contract data is generated
+  continuously. We propose retraining on a quarterly cadence and
+  monitoring for model drift between cycles."
+- "The joblib artefact already contains the full preprocessing +
+  classification pipeline — no separate inference preprocessing needed."
+
+================================================================================
+SLIDE 21 — BUSINESS VALUE & CTA
+================================================================================
+GOAL: Close with the business case and a single, unambiguous call to action.
+
+KEY IDEAS TO CONVEY:
+- "To summarise the value proposition: this model enables Allianz to move
+  from mass outreach — contacting everyone — to precision targeting —
+  contacting the contracts most likely to convert."
+- "That efficiency gain directly reduces campaign cost, improves conversion
+  rates, and accelerates the path from 21% to market parity at 65%."
+- "The five operational benefits are: improved cash-flow predictability,
+  reduced collection costs, shorter receivables cycle, broker empowerment,
+  and better customer experience."
+- "The single recommended next action is: approve the 90-day controlled pilot.
+  5,000 targeted contracts vs. 5,000 control contracts.
+  Measure actual conversion. Validate the ROI. Then scale."
+- End with: "XGBoost achieved 97.87% ROC-AUC across 452,222 contracts.
+  The infrastructure is built. The question now is not whether the model
+  works — it is whether we act on it."
+
+================================================================================
+SLIDE 22 — Q&A
+================================================================================
+GOAL: Open the floor. Be prepared for the following common technical questions.
+
+LIKELY QUESTIONS FROM TECHNICAL REVIEWERS:
+
+Q: "Did you consider neural networks or deep learning models?"
+A: "Neural networks offer marginal gains over XGBoost on tabular data
+   at this scale, at significantly higher infrastructure cost and lower
+   interpretability. The current ROC-AUC of 97.87% leaves little room
+   for meaningful improvement from a more complex architecture."
+
+Q: "Why F1 as a secondary metric rather than Precision-Recall AUC?"
+A: "Both are valid. F1 is reported because it is familiar to business
+   stakeholders. PR-AUC would give a more granular view of the
+   precision-recall trade-off. We can add it to the appendix."
+
+Q: "How do you handle new contracts that have not been seen in training?"
+A: "The pipeline uses one-hot encoding with 'Unknown' imputation for
+   unseen categories. New contracts are scored in the same pipeline.
+   Retraining on fresh data quarterly keeps the model calibrated."
+
+Q: "What is the threshold for the binary decision — 0.5?"
+A: "Currently 0.5 as the default. The optimal threshold depends on the
+   cost trade-off between false positives (wasted outreach) and false
+   negatives (missed conversions). The pilot will generate the data needed
+   to optimise this threshold empirically."
+
+Q: "Have you validated against a holdout from a different time period?"
+A: "The current evaluation is an 80/20 stratified split from the same
+   dataset snapshot. Temporal validation on a more recent contract batch
+   is listed as a next step — it would confirm that the model generalises
+   across time, not just across contracts in the same snapshot."
+
+================================================================================
+END OF PRESENTER GUIDE
+================================================================================

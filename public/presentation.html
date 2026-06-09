@@ -1,0 +1,1163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Allianz · Direct Debit ML Model — Technical Review</title>
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reset.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ── Brand tokens ──────────────────────────────────── */
+    :root {
+      --allianz-blue:    #003781;
+      --allianz-light:   #0079C0;
+      --allianz-sky:     #5BB8F5;
+      --allianz-teal:    #00B4D8;
+      --bg-dark:         #0B1A35;
+      --bg-card:         #112244;
+      --bg-card2:        #0D2150;
+      --text-main:       #EFF4FF;
+      --text-muted:      #8BA5CC;
+      --accent-green:    #22C55E;
+      --accent-yellow:   #FACC15;
+      --accent-red:      #F87171;
+      --accent-orange:   #FB923C;
+      --border:          rgba(91,184,245,0.18);
+    }
+
+    /* ── Base ──────────────────────────────────────────── */
+    .reveal-viewport { background: var(--bg-dark); }
+
+    .reveal {
+      font-family: 'Inter', sans-serif;
+      font-size: 16px;
+      color: var(--text-main);
+    }
+
+    .reveal .slides section {
+      text-align: left;
+      padding: 0 3rem;
+      height: 100%;
+      box-sizing: border-box;
+    }
+
+    /* ── Typography ────────────────────────────────────── */
+    .reveal h1 {
+      font-size: 2.6rem;
+      font-weight: 700;
+      line-height: 1.15;
+      color: var(--text-main);
+      letter-spacing: -0.5px;
+    }
+    .reveal h2 {
+      font-size: 1.7rem;
+      font-weight: 600;
+      color: var(--allianz-sky);
+      margin-bottom: .6rem;
+      letter-spacing: -0.3px;
+    }
+    .reveal h3 {
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: var(--allianz-sky);
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin-bottom: .4rem;
+    }
+    .reveal p, .reveal li {
+      font-size: .92rem;
+      line-height: 1.7;
+      color: var(--text-main);
+    }
+    .reveal strong { color: var(--allianz-sky); font-weight: 600; }
+    .reveal em     { color: var(--accent-yellow); font-style: normal; }
+    .reveal code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .78rem;
+      background: rgba(0,121,192,.18);
+      color: var(--allianz-sky);
+      padding: .1em .35em;
+      border-radius: 4px;
+    }
+
+    /* ── Progress & controls ───────────────────────────── */
+    .reveal .progress { color: var(--allianz-light); }
+    .reveal .controls { color: var(--allianz-sky); }
+    .reveal .slide-number {
+      background: transparent;
+      color: var(--text-muted);
+      font-size: .7rem;
+    }
+
+    /* ── Utility classes ───────────────────────────────── */
+    .chip {
+      display: inline-block;
+      padding: .2rem .65rem;
+      border-radius: 99px;
+      font-size: .72rem;
+      font-weight: 600;
+      letter-spacing: .5px;
+      text-transform: uppercase;
+    }
+    .chip-blue   { background: rgba(0,55,129,.5); color: var(--allianz-sky); border: 1px solid var(--allianz-light); }
+    .chip-green  { background: rgba(34,197,94,.15); color: var(--accent-green); border: 1px solid rgba(34,197,94,.4); }
+    .chip-yellow { background: rgba(250,204,21,.12); color: var(--accent-yellow); border: 1px solid rgba(250,204,21,.35); }
+    .chip-red    { background: rgba(248,113,113,.12); color: var(--accent-red); border: 1px solid rgba(248,113,113,.35); }
+
+    .divider {
+      width: 48px; height: 3px;
+      background: linear-gradient(90deg, var(--allianz-light), var(--allianz-sky));
+      border-radius: 2px;
+      margin: .6rem 0 1.1rem;
+    }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.1rem 1.3rem;
+    }
+    .card-sm {
+      background: var(--bg-card2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: .8rem 1rem;
+    }
+
+    .metric-big {
+      font-size: 3.2rem;
+      font-weight: 700;
+      line-height: 1;
+    }
+    .metric-label {
+      font-size: .78rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-top: .25rem;
+    }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: .8rem; }
+    .grid-4 { display: grid; grid-template-columns: repeat(4,1fr); gap: .7rem; }
+
+    .bar-wrap { width: 100%; background: rgba(255,255,255,.07); border-radius: 4px; height: 10px; overflow: hidden; margin-top: .4rem; }
+    .bar-fill  { height: 100%; border-radius: 4px; transition: width 1s ease; }
+
+    .icon { font-size: 1.4rem; margin-bottom: .3rem; }
+
+    ul.clean { list-style: none; padding: 0; margin: 0; }
+    ul.clean li {
+      padding: .45rem 0;
+      border-bottom: 1px solid rgba(255,255,255,.06);
+      display: flex;
+      align-items: flex-start;
+      gap: .6rem;
+    }
+    ul.clean li:last-child { border-bottom: none; }
+    ul.clean li::before { content: "›"; color: var(--allianz-sky); font-size: 1rem; flex-shrink: 0; margin-top: .02rem; }
+
+    .highlight-box {
+      background: linear-gradient(135deg, rgba(0,121,192,.25), rgba(91,184,245,.12));
+      border: 1px solid var(--allianz-light);
+      border-left: 4px solid var(--allianz-sky);
+      border-radius: 10px;
+      padding: 1rem 1.2rem;
+      margin: .7rem 0;
+    }
+
+    .quote {
+      font-size: 1.05rem;
+      font-weight: 500;
+      color: var(--text-main);
+      font-style: italic;
+      line-height: 1.6;
+    }
+
+    table.styled {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .8rem;
+    }
+    table.styled th {
+      background: rgba(0,55,129,.6);
+      color: var(--allianz-sky);
+      padding: .55rem .75rem;
+      text-transform: uppercase;
+      font-size: .68rem;
+      letter-spacing: .8px;
+      text-align: left;
+    }
+    table.styled td {
+      padding: .5rem .75rem;
+      border-bottom: 1px solid rgba(255,255,255,.06);
+    }
+    table.styled tr:last-child td { border-bottom: none; }
+    table.styled tr.winner td { background: rgba(34,197,94,.08); }
+    table.styled .star { color: var(--accent-yellow); font-size: 1rem; }
+
+    /* ── Title slide overrides ─────────────────────────── */
+    .slide-title {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      height: 100%;
+      padding: 0 3.5rem !important;
+      background: radial-gradient(ellipse at 70% 30%, rgba(0,121,192,.18) 0%, transparent 65%);
+    }
+    .slide-title .eyebrow {
+      font-size: .72rem;
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+      color: var(--allianz-sky);
+      margin-bottom: .8rem;
+    }
+    .slide-title .meta-row {
+      display: flex;
+      gap: .7rem;
+      margin-top: 1.4rem;
+      flex-wrap: wrap;
+    }
+
+    /* ── Section heading slide ─────────────────────────── */
+    .slide-section {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center !important;
+      height: 100%;
+      background: radial-gradient(ellipse at 50% 40%, rgba(0,121,192,.22) 0%, transparent 70%);
+    }
+    .slide-section .section-number {
+      font-size: 5rem;
+      font-weight: 700;
+      color: rgba(91,184,245,.12);
+      line-height: 1;
+      margin-bottom: -.5rem;
+    }
+    .slide-section h2 {
+      font-size: 2.2rem !important;
+      color: var(--text-main) !important;
+    }
+    .slide-section p {
+      color: var(--text-muted);
+      max-width: 520px;
+    }
+
+    /* ── Reveal overrides for clean slide layout ───────── */
+    .reveal .slides { height: 100% !important; }
+    .slide-body {
+      display: flex;
+      flex-direction: column;
+      padding: 2.2rem 3rem !important;
+      height: 100%;
+      box-sizing: border-box;
+    }
+    .slide-body h2 { margin-bottom: .2rem; }
+    .slide-body .content { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+
+    .badge-winner {
+      display: inline-flex;
+      align-items: center;
+      gap: .3rem;
+      background: linear-gradient(135deg, rgba(34,197,94,.25), rgba(34,197,94,.1));
+      border: 1px solid rgba(34,197,94,.5);
+      color: var(--accent-green);
+      font-size: .72rem;
+      font-weight: 700;
+      letter-spacing: .8px;
+      text-transform: uppercase;
+      padding: .2rem .6rem;
+      border-radius: 99px;
+    }
+
+    .vs-arrow {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-muted);
+      font-size: .9rem;
+      padding: 0 .2rem;
+    }
+  </style>
+</head>
+<body>
+<div class="reveal">
+<div class="slides">
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 1 · TITLE
+═══════════════════════════════════════════════════════ -->
+<section class="slide-title">
+  <div class="eyebrow">Allianz Data Office · Technical Review · 2026</div>
+  <h1>Predicting Direct Debit<br>Adoption with Machine Learning</h1>
+  <div class="divider"></div>
+  <p style="max-width:560px; color:var(--text-muted); font-size:.9rem; line-height:1.8;">
+    A supervised binary classification project across <strong>452,222 insurance contracts</strong>
+    to identify conversion candidates and prioritise outreach campaigns.
+  </p>
+  <div class="meta-row">
+    <span class="chip chip-blue">CRISP-DM Methodology</span>
+    <span class="chip chip-blue">5 Models Compared</span>
+    <span class="chip chip-green">XGBoost · ROC-AUC 97.87%</span>
+    <span class="chip chip-yellow">Top 5K · 4× Conversion Lift</span>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 2 · EXECUTIVE SUMMARY
+═══════════════════════════════════════════════════════ -->
+<section class="slide-body">
+  <h3>Overview</h3>
+  <h2>Executive Summary</h2>
+  <div class="divider"></div>
+  <div class="content">
+    <div class="highlight-box">
+      <p class="quote">"Allianz Benelux has a direct debit adoption rate of ~21% — less than one-third
+      of the ~65% market average. Every percentage point gained translates directly into
+      improved cash-flow predictability and lower collection costs."</p>
+    </div>
+    <div class="grid-3" style="margin-top:1.1rem;">
+      <div class="card" style="text-align:center;">
+        <div class="metric-big" style="color:var(--accent-red);">21%</div>
+        <div class="metric-label">Current Adoption</div>
+      </div>
+      <div class="card" style="text-align:center;">
+        <div class="metric-big" style="color:var(--accent-yellow);">65%</div>
+        <div class="metric-label">Market Average</div>
+      </div>
+      <div class="card" style="text-align:center;">
+        <div class="metric-big" style="color:var(--accent-green);">44 pts</div>
+        <div class="metric-label">Gap to Close</div>
+      </div>
+    </div>
+    <ul class="clean" style="margin-top:1rem;">
+      <li>Direct debit improves <strong>cash-flow predictability</strong>, reduces manual collection cost, and shortens the receivables cycle.</li>
+      <li>We trained and compared <strong>five classification models</strong> on 452K real contracts following the CRISP-DM framework.</li>
+      <li><strong>XGBoost</strong> was selected as production model (ROC-AUC 97.87%). The top 5,000 scored contracts show a <em>4× conversion lift</em> over the portfolio baseline.</li>
+    </ul>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 3 · SECTION BREAK — DATA & EDA
+═══════════════════════════════════════════════════════ -->
+<section class="slide-section">
+  <div class="section-number">01</div>
+  <h2>Data Understanding</h2>
+  <p>Dataset scale, structure, data quality findings, and key EDA patterns.</p>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 4 · DATASET AT SCALE
+═══════════════════════════════════════════════════════ -->
+<section class="slide-body">
+  <h3>Data Understanding</h3>
+  <h2>The Dataset at Scale</h2>
+  <div class="divider"></div>
+  <div class="content">
+    <div class="grid-2" style="gap:1.2rem;">
+      <div>
+        <div class="grid-2" style="gap:.7rem; margin-bottom:.8rem;">
+          <div class="card" style="text-align:center;">
+            <div class="metric-big" style="font-size:2.2rem; color:var(--allianz-sky);">452K</div>
+            <div class="metric-label">Insurance Contracts</div>
+          </div>
+          <div class="card" style="text-align:center;">
+            <div class="metric-big" style="font-size:2.2rem; color:var(--allianz-sky);">16</div>
+            <div class="metric-label">Feature Columns</div>
+          </div>
+        </div>
+        <div class="card-sm" style="margin-bottom:.7rem;">
+          <strong>Unit of analysis:</strong> one row = one insurance contract.<br>
+          <span style="color:var(--text-muted); font-size:.82rem;">A single customer may hold multiple contracts.</span>
+        </div>
+        <div class="card-sm">
+          <strong>Data quality highlights</strong>
+          <ul class="clean" style="margin-top:.4rem;">
+            <li>Null values &lt; 0.001% — negligible missing data</li>
+            <li>64 exact duplicate rows removed</li>
+            <li><code>Broker_cor</code> outlier cap at P95 (max was 6 × 10¹⁶)</li>
+            <li><code>Annual_premium</code> log-transformed — heavy right skew</li>
+          </ul>
+        </div>
+      </div>
+      <div>
+        <div class="card" style="height:100%;">
+          <p style="font-size:.78rem; color:var(--text-muted); margin-bottom:.6rem; text-transform:uppercase; letter-spacing:.8px;">Key Features</p>
+          <table class="styled">
+            <tr><th>Feature</th><th>Type</th></tr>
+            <tr><td><code>Payment_frequency</code></td><td>Categorical</td></tr>
+            <tr><td><code>Customer_segment</code></td><td>Categorical</td></tr>
+            <tr><td><code>Customer_type</code></td><td>Categorical</td></tr>
+            <tr><td><code>Line_of_business</code></td><td>Categorical</td></tr>
+            <tr><td><code>Customer_region</code></td><td>Categorical</td></tr>
+            <tr><td><code>Annual_premium</code></td><td>Numeric</td></tr>
+            <tr><td><code>Broker_cor</code></td><td>Numeric (ratio)</td></tr>
+            <tr><td><code>Customer_age</code></td><td>Categorical</td></tr>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 5 · CLASS IMBALANCE
+═══════════════════════════════════════════════════════ -->
+<section class="slide-body">
+  <h3>Data Understanding</h3>
+  <h2>Class Imbalance — Why Accuracy Alone Misleads</h2>
+  <div class="divider"></div>
+  <div class="content">
+    <div class="grid-2" style="gap:1.2rem; align-items:start;">
+      <div>
+        <div class="card" style="margin-bottom:.8rem;">
+          <p style="font-size:.78rem; color:var(--text-muted); margin-bottom:.8rem; text-transform:uppercase; letter-spacing:.8px;">Training Set Distribution</p>
+          <div style="display:flex; gap:1rem; align-items:center; margin-bottom:.5rem;">
+            <div style="flex:1;">
+              <div style="font-size:.8rem; color:var(--text-muted); margin-bottom:.3rem;">No Direct Debit <strong style="color:var(--accent-red);">79%</strong></div>
+              <div class="bar-wrap"><div class="bar-fill" style="width:79%; background:var(--accent-red);"></div></div>
+            </div>
+          </div>
+          <div style="display:flex; gap:1rem; align-items:center;">
+            <div style="flex:1;">
+              <div style="font-size:.8rem; color:var(--text-muted); margin-bottom:.3rem;">Direct Debit <strong style="color:var(--accent-green);">21%</strong></div>
+              <div class="bar-wrap"><div class="bar-fill" style="width:21%; background:var(--accent-green);"></div></div>
+            </div>
+          </div>
+          <p style="font-size:.75rem; color:var(--text-muted); margin-top:.7rem;">Imbalance ratio: <strong>3.76 : 1</strong> (285,696 vs. 76,028 in train set)</p>
+        </div>
+        <div class="highlight-box">
+          <strong>Naive baseline trap</strong>
+          <p style="font-size:.82rem; margin-top:.3rem;">
+            A model that always predicts "No Direct Debit" would reach <em>~79% accuracy</em>
+            without learning anything useful.
+          </p>
+        </div>
+      </div>
+      <div>
+        <div class="card">
+          <p style="font-size:.78rem; color:var(--text-muted); margin-bottom:.6rem; text-transform:uppercase; letter-spacing:.8px;">Our Strategy</p>
+          <ul class="clean">
+            <li><strong>class_weight='balanced'</strong> on all sklearn classifiers to penalise majority class</li>
+            <li><strong>scale_pos_weight = 3.76</strong> for XGBoost to match imbalance ratio</li>
+            <li>Primary metrics: <strong>ROC-AUC</strong>, <strong>F1-Score</strong>, <strong>Recall</strong></li>
+            <li>Stratified train/test split to preserve class proportions</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 6 · EDA KEY FINDINGS
+═══════════════════════════════════════════════════════ -->
+<section class="slide-body">
+  <h3>Data Understanding</h3>
+  <h2>EDA — Key Business Patterns</h2>
+  <div class="divider"></div>
+  <div class="content">
+    <div class="grid-2" style="gap:1rem;">
+      <div>
+        <div class="card-sm" style="margin-bottom:.7rem;">
+          <p style="font-size:.72rem; color:var(--allianz-sky); text-transform:uppercase; letter-spacing:.8px; margin-bottom:.3rem;">Dominant Signal</p>
+          <strong>Payment Frequency</strong>
+          <p style="font-size:.82rem; margin-top:.25rem;">Monthly contracts approach <em>100% direct debit</em> — an Allianz business rule, not a learnable signal. This creates a data leakage risk requiring dedicated analysis.</p>
+        </div>
+        <div class="card-sm" style="margin-bottom:.7rem;">
+          <p style="font-size:.72rem; color:var(--allianz-sky); text-transform:uppercase; letter-spacing:.8px; margin-bottom:.3rem;">Customer Segment</p>
+          <strong>Retail · SME · Mid-Corp</strong>
+          <p style="font-size:.82rem; margin-top:.25rem;">Each segment shows distinct adoption rates — campaign strategy must be differentiated by segment.</p>
+        </div>
+        <div class="card-sm">
+          <p style="font-size:.72rem; color:var(--allianz-sky); text-transform:uppercase; letter-spacing:.8px; margin-bottom:.3rem;">Customer Type</p>
+          <strong>Individuals vs. Businesses</strong>
+          <p style="font-size:.82rem; margin-top:.25rem;">Business clients prefer manual payment control. Individual policyholders are the primary conversion target.</p>
+        </div>
+      </div>
+      <div>
+        <div class="card-sm" style="margin-bottom:.7rem;">
+          <p style="font-size:.72rem; color:var(--allianz-sky); text-transform:uppercase; letter-spacing:.8px; margin-bottom:.3rem;">Geography</p>
+          <strong>Region &amp; Urbanisation</strong>
+          <p style="font-size:.82rem; margin-top:.25rem;">Belgian regions (BRU, WAL, FLA) and urbanisation levels show variation — urban areas exhibit different adoption patterns to rural areas.</p>
+        </div>
+        <div class="card-sm" style="margin-bottom:.7rem;">
+          <p style="font-size:.72rem; color:var(--allianz-sky); text-transform:uppercase; letter-spacing:.8px; margin-bottom:.3rem;">Annual Premium</p>
+          <strong>Heavy Right Skew</strong>
+          <p style="font-size:.82rem; margin-top:.25rem;">Max ~€3M vs. mean ~€513. Log-transform applied before modelling. Higher-premium clients may prefer manual payment control.</p>
+        </div>
+        <div class="card-sm">
+          <p style="font-size:.72rem; color:var(--allianz-sky); text-transform:uppercase; letter-spacing:.8px; margin-bottom:.3rem;">Line of Business</p>
+          <strong>Product Structural Effects</strong>
+          <p style="font-size:.82rem; margin-top:.25rem;">Auto and Property insurance lines show structurally higher direct debit rates. Product context matters for segmented campaigns.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 7 · SECTION BREAK — MODELLING
+═══════════════════════════════════════════════════════ -->
+<section class="slide-section">
+  <div class="section-number">02</div>
+  <h2>Modelling</h2>
+  <p>Feature engineering, preprocessing pipeline, five classifiers — rationale and configuration.</p>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 8 · FEATURE ENGINEERING + PIPELINE
+═══════════════════════════════════════════════════════ -->
+<section class="slide-body">
+  <h3>Modelling</h3>
+  <h2>Feature Engineering &amp; Preprocessing Pipeline</h2>
+  <div class="divider"></div>
+  <div class="content">
+    <div class="grid-2" style="gap:1rem;">
+      <div>
+        <div class="card" style="margin-bottom:.8rem;">
+          <p style="font-size:.78rem; color:var(--text-muted); margin-bottom:.5rem; text-transform:uppercase; letter-spacing:.8px;">Engineered Features</p>
+          <ul class="clean">
+            <li><code>Premium_log</code> — log1p transform reduces right-skew</li>
+            <li><code>Is_monthly_payment</code> — binary flag for monthly frequency</li>
+            <li><code>Broker_profitable</code> — binary flag when Broker COR &lt; 100%</li>
+          </ul>
+        </div>
+        <div class="card">
+          <p style="font-size:.78rem; color:var(--text-muted); margin-bottom:.5rem; text-transform:uppercase; letter-spacing:.8px;">Preprocessing Steps</p>
+          <ul class="clean">
+            <li><strong>Categorical</strong>: impute → <code>'Unknown'</code> → One-Hot Encoding</li>
+            <li><strong>Numerical</strong>: impute → median → StandardScaler</li>
+            <li>ID columns excluded: <code>Broker_account_number</code>, <code>Contract_number</code>, <code>Customer_ID</code></li>
+          </ul>
+        </div>
+      </div>
+      <div>
+        <div class="card" style="height:100%;">
+          <p style="font-size:.78rem; color:var(--text-muted); margin-bottom:.5rem; text-transform:uppercase; letter-spacing:.8px;">sklearn Pipeline Architecture</p>
+          <div style="display:flex; flex-direction:column; gap:.5rem; margin-top:.3rem;">
+            <div class="card-sm" style="text-align:center;">
+              <span style="font-size:.82rem; color:var(--allianz-sky);">ColumnTransformer</span><br>
+              <span style="font-size:.72rem; color:var(--text-muted);">Categorical + Numerical branches</span>
+            </div>
+            <div style="text-align:center; color:var(--text-muted);">↓</div>
+            <div class="card-sm" style="text-align:center;">
+              <span style="font-size:.82rem; color:var(--allianz-sky);">Classifier</span><br>
+              <span style="font-size:.72rem; color:var(--text-muted);">DT / RF / LR / SVM / XGBoost</span>
+            </div>
+            <div style="text-align:center; color:var(--text-muted);">↓</div>
+            <div class="card-sm" style="text-align:center;">
+              <span style="font-size:.82rem; color:var(--allianz-sky);">predict_proba( )</span><br>
+              <span style="font-size:.72rem; color:var(--text-muted);">Probability scores for all contracts</span>
+            </div>
+          </div>
+          <p style="font-size:.75rem; color:var(--text-muted); margin-top:.8rem;">
+            Stratified 80/20 split — 361,725 train · 90,432 test rows.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 9 · 5 MODELS
+═══════════════════════════════════════════════════════ -->
+<section class="slide-body">
+  <h3>Modelling</h3>
+  <h2>Five Classifiers — Rationale</h2>
+  <div class="divider"></div>
+  <div class="content">
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:.65rem;">
+
+      <div class="card-sm">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:.3rem;">
+          <strong style="font-size:.88rem;">Decision Tree</strong>
+          <span class="chip chip-blue">Depth 5</span>
+        </div>
+        <p style="font-size:.8rem; color:var(--text-muted);">Highly interpretable — splits translate directly to business rules. Used as explainability model for broker training. Risk: prone to overfitting without depth constraints.</p>
+      </div>
+
+      <div class="card-sm">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:.3rem;">
+          <strong style="font-size:.88rem;">Random Forest</strong>
+          <span class="chip chip-blue">200 Trees</span>
+        </div>
+        <p style="font-size:.8rem; color:var(--text-muted);">Ensemble averaging reduces overfitting. Provides feature importances for business interpretation. Slower on very large datasets.</p>
+      </div>
+
+      <div class="card-sm">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:.3rem;">
+          <strong style="font-size:.88rem;">Logistic Regression</strong>
+          <span class="chip chip-blue">Baseline</span>
+        </div>
+        <p style="font-size:.8rem; color:var(--text-muted);">Strong interpretable baseline — coefficients show direction and magnitude. Ideal for communicating to non-technical stakeholders. Assumes linear decision boundary.</p>
+      </div>
+
+      <div class="card-sm">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:.3rem;">
+          <strong style="font-size:.88rem;">SVM (RBF Kernel)</strong>
+          <span class="chip chip-yellow">50K Sample</span>
+        </div>
+        <p style="font-size:.8rem; color:var(--text-muted);">Captures non-linear decision boundaries. Trained on stratified 50K sample due to O(n²) computational cost at full 360K+ scale. Test set remains the full 90K.</p>
+      </div>
+
+      <div class="card-sm" style="grid-column:span 2; border-color:rgba(34,197,94,.3);">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:.3rem;">
+          <strong style="font-size:.88rem;">XGBoost</strong>
+          <span class="badge-winner">★ Selected Model</span>
+        </div>
+        <p style="font-size:.8rem; color:var(--text-muted);">Gradient boosting iteratively corrects residual errors. Best in class on tabular data with sparse one-hot encoded features. 300 estimators, learning_rate=0.05, max_depth=4. scale_pos_weight=3.76 handles class imbalance natively.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 10 · SECTION BREAK — RESULTS
+═══════════════════════════════════════════════════════ -->
+<section class="slide-section">
+  <div class="section-number">03</div>
+  <h2>Evaluation &amp; Results</h2>
+  <p>Model comparison, confusion matrices, feature importance, and the data leakage discovery.</p>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 11 · MODEL COMPARISON TABLE
+═══════════════════════════════════════════════════════ -->
+<section class="slide-body">
+  <h3>Evaluation</h3>
+  <h2>Model Comparison — Full Test Set (90,432 rows)</h2>
+  <div class="divider"></div>
+  <div class="content">
+    <table class="styled">
+      <thead>
+        <tr>
+          <th>Model</th>
+          <th>Accuracy</th>
+          <th>Precision</th>
+          <th>Recall</th>
+          <th>F1-Score</th>
+          <th>ROC-AUC</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="winner">
+          <td><strong>XGBoost</strong> <span class="star">★</span></td>
+          <td>98.52%</td>
+          <td>99.97%</td>
+          <td>92.98%</td>
+          <td>96.35%</td>
+          <td><strong style="color:var(--accent-green);">97.87%</strong></td>
+        </tr>
+        <tr>
+          <td>Random Forest</td>
+          <td>98.52%</td>
+          <td>100.00%</td>
+          <td>92.97%</td>
+          <td>96.36%</td>
+          <td>97.73%</td>
+        </tr>
+        <tr>
+          <td>Logistic Regression</td>
+          <td>98.52%</td>
+          <td>100.00%</td>
+          <td>92.97%</td>
+          <td>96.35%</td>
+          <td>97.67%</td>
+        </tr>
+        <tr>
+          <td>Decision Tree</td>
+          <td>98.50%</td>
+          <td>99.86%</td>
+          <td>92.98%</td>
+          <td>96.30%</td>
+          <td>97.47%</td>
+        </tr>
+        <tr>
+          <td>SVM (50K sample)</td>
+          <td>98.52%</td>
+          <td>100.00%</td>
+          <td>92.95%</td>
+          <td>96.35%</td>
+          <td>96.94%</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="highlight-box" style="margin-top:.9rem;">
+      <strong>Why the metrics cluster tightly:</strong>
+      <p style="font-size:.83rem; margin-top:.25rem;">
+        All five models converge near 98.5% accuracy and 96.3% F1 — confirming that the dataset,
+        even after class-weight balancing, contains strong structural signal
+        (particularly <code>Payment_frequency</code>). ROC-AUC is the decisive tie-breaker,
+        where XGBoost's <em>97.87%</em> edges ahead.
+      </p>
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 12 · DATA LEAKAGE DISCOVERY
+═══════════════════════════════════════════════════════ -->
+<section class="slide-body">
+  <h3>Evaluation</h3>
+  <h2>Data Leakage Discovery — Strategy B Analysis</h2>
+  <div class="divider"></div>
+  <div class="content">
+    <div class="grid-2" style="gap:1.2rem;">
+      <div>
+        <div class="highlight-box" style="border-left-color:var(--accent-yellow);">
+          <strong style="color:var(--accent-yellow);">Finding</strong>
+          <p style="font-size:.85rem; margin-top:.3rem;">
+            <code>Payment_frequency = Monthly</code> is near-perfectly correlated with direct debit
+            because of an <strong>Allianz business rule</strong>: monthly contracts <em>must</em>
+            use direct debit. This is a rule, not a learnable pattern — it is near-total data leakage.
+          </p>
+        </div>
+        <div class="card" style="margin-top:.8rem;">
+          <p style="font-size:.78rem; color:var(--text-muted); margin-bottom:.5rem; text-transform:uppercase; letter-spacing:.8px;">Strategy B — Remove Frequency Features</p>
+          <p style="font-size:.85rem;">When <code>Payment_frequency</code> and <code>Is_monthly_payment</code> were excluded:</p>
+          <div style="display:flex; gap:1rem; margin-top:.7rem;">
+            <div class="card-sm" style="flex:1; text-align:center;">
+              <div style="font-size:1.6rem; font-weight:700; color:var(--accent-green);">97.87%</div>
+              <div class="metric-label">Strategy A<br>(with frequency)</div>
+            </div>
+            <div class="vs-arrow">→</div>
+            <div class="card-sm" style="flex:1; text-align:center;">
+              <div style="font-size:1.6rem; font-weight:700; color:var(--accent-yellow);">75.56%</div>
+              <div class="metric-label">Strategy B<br>(without frequency)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="card">
+          <p style="font-size:.78rem; color:var(--text-muted); margin-bottom:.5rem; text-transform:uppercase; letter-spacing:.8px;">Interpretation</p>
+          <ul class="clean">
+            <li>Strategy A is valid for scoring existing contracts where payment frequency is known.</li>
+            <li>Strategy B (AUC 75.56%) reveals the <strong>genuine behavioural and demographic signals</strong> — customer segment, region, product type, broker quality — that drive voluntary adoption.</li>
+            <li>For campaign targeting of non-monthly contracts, <em>Strategy B</em> is the operationally meaningful model.</li>
+            <li>Both models should be maintained and deployed for their respective use cases.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 13 · FEATURE IMPORTANCE
+═══════════════════════════════════════════════════════ -->
+<section class="slide-body">
+  <h3>Evaluation</h3>
+  <h2>What Drives Direct Debit Adoption?</h2>
+  <div class="divider"></div>
+  <div class="content">
+    <div class="grid-2" style="gap:1rem;">
+      <div>
+        <p style="font-size:.8rem; color:var(--text-muted); margin-bottom:.6rem;">Top features by model importance (Strategy A)</p>
+        <div style="display:flex; flex-direction:column; gap:.5rem;">
+          <div>
+            <div style="display:flex; justify-content:space-between; font-size:.8rem;">
+              <span><code>Payment_frequency_Monthly</code></span>
+              <span style="color:var(--accent-yellow);">★ dominant</span>
+            </div>
+            <div class="bar-wrap"><div class="bar-fill" style="width:88%; background:linear-gradient(90deg,var(--allianz-light),var(--allianz-sky));"></div></div>
+          </div>
+          <div>
+            <div style="display:flex; justify-content:space-between; font-size:.8rem;">
+              <span><code>Customer_segment</code></span>
+            </div>
+            <div class="bar-wrap"><div class="bar-fill" style="width:42%; background:var(--allianz-sky);"></div></div>
+          </div>
+          <div>
+            <div style="display:flex; justify-content:space-between; font-size:.8rem;">
+              <span><code>Customer_type</code></span>
+            </div>
+            <div class="bar-wrap"><div class="bar-fill" style="width:35%; background:var(--allianz-sky);"></div></div>
+          </div>
+          <div>
+            <div style="display:flex; justify-content:space-between; font-size:.8rem;">
+              <span><code>Line_of_business</code></span>
+            </div>
+            <div class="bar-wrap"><div class="bar-fill" style="width:28%; background:var(--allianz-sky);"></div></div>
+          </div>
+          <div>
+            <div style="display:flex; justify-content:space-between; font-size:.8rem;">
+              <span><code>Premium_log</code></span>
+            </div>
+            <div class="bar-wrap"><div class="bar-fill" style="width:22%; background:var(--allianz-teal);"></div></div>
+          </div>
+          <div>
+            <div style="display:flex; justify-content:space-between; font-size:.8rem;">
+              <span><code>Broker_profitable</code></span>
+            </div>
+            <div class="bar-wrap"><div class="bar-fill" style="width:16%; background:var(--allianz-teal);"></div></div>
+          </div>
+          <div>
+            <div style="display:flex; justify-content:space-between; font-size:.8rem;">
+              <span><code>Customer_region</code></span>
+            </div>
+            <div class="bar-wrap"><div class="bar-fill" style="width:12%; background:var(--allianz-teal);"></div></div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="card">
+          <p style="font-size:.78rem; color:var(--text-muted); margin-bottom:.5rem; text-transform:uppercase; letter-spacing:.8px;">Business Interpretation</p>
+          <ul class="clean">
+            <li><strong>Payment frequency</strong>: Reflects the business rule — operationally meaningful for existing pipeline, not for new adoption strategy.</li>
+            <li><strong>Customer segment</strong>: Retail, SME, and Mid-Corp require differentiated campaigns.</li>
+            <li><strong>Customer type</strong>: Individual policyholders are primary conversion targets; businesses prefer manual control.</li>
+            <li><strong>Line of business</strong>: Auto and Property lines have structural DD advantages.</li>
+            <li><strong>Broker profitability</strong>: High-performing brokers (COR &lt; 100%) actively recommend DD to clients.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 14 · SECTION BREAK — RECOMMENDATIONS
+═══════════════════════════════════════════════════════ -->
+<section class="slide-section">
+  <div class="section-number">04</div>
+  <h2>Business Recommendations</h2>
+  <p>Scoring the portfolio, campaign design, segmentation strategy, and broker engagement.</p>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 15 · PORTFOLIO SCORING
+═══════════════════════════════════════════════════════ -->
+<section class="slide-body">
+  <h3>Recommendations</h3>
+  <h2>Scoring the Portfolio — Prioritised Targeting</h2>
+  <div class="divider"></div>
+  <div class="content">
+    <div class="grid-2" style="gap:1.2rem;">
+      <div>
+        <div class="highlight-box" style="margin-bottom:.8rem;">
+          <p class="quote" style="font-size:.9rem;">
+            Every contract without direct debit was scored individually.
+            The top 5,000 contracts achieve a predicted conversion probability
+            <em>4× higher</em> than the portfolio baseline.
+          </p>
+        </div>
+        <div class="grid-2" style="gap:.7rem;">
+          <div class="card" style="text-align:center;">
+            <div class="metric-big" style="font-size:2rem; color:var(--accent-green);">24.97%</div>
+            <div class="metric-label">Top 5,000 contracts<br>avg predicted prob.</div>
+          </div>
+          <div class="card" style="text-align:center;">
+            <div class="metric-big" style="font-size:2rem; color:var(--text-muted);">6.22%</div>
+            <div class="metric-label">Portfolio baseline<br>avg predicted prob.</div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="card">
+          <p style="font-size:.78rem; color:var(--text-muted); margin-bottom:.5rem; text-transform:uppercase; letter-spacing:.8px;">How to Use the Scores</p>
+          <ul class="clean">
+            <li>Sort all non-DD contracts by predicted probability (descending)</li>
+            <li>Define outreach tiers: <strong>Top 5K</strong> (priority), 5K–20K (secondary), 20K+ (mass channel)</li>
+            <li>Each tier receives a different communication channel and message</li>
+            <li>Probability score feeds into broker dashboards for personalised conversations</li>
+            <li>Re-score the full portfolio quarterly as new contracts are added</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 16 · PILOT CAMPAIGN DESIGN
+═══════════════════════════════════════════════════════ -->
+<section class="slide-body">
+  <h3>Recommendations</h3>
+  <h2>Controlled Pilot — Campaign Design</h2>
+  <div class="divider"></div>
+  <div class="content">
+    <div class="grid-2" style="gap:1.2rem; align-items:start;">
+      <div>
+        <div class="card">
+          <p style="font-size:.78rem; color:var(--text-muted); margin-bottom:.7rem; text-transform:uppercase; letter-spacing:.8px;">A/B Pilot Structure</p>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:.6rem; text-align:center;">
+            <div class="card-sm" style="border-color:rgba(34,197,94,.4);">
+              <div style="font-size:1.5rem; font-weight:700; color:var(--accent-green);">5,000</div>
+              <div style="font-size:.75rem; color:var(--accent-green); margin:.2rem 0;">Treatment Group</div>
+              <p style="font-size:.78rem; color:var(--text-muted);">Top-ranked contracts by model score — targeted outreach</p>
+            </div>
+            <div class="card-sm" style="border-color:rgba(255,255,255,.15);">
+              <div style="font-size:1.5rem; font-weight:700; color:var(--text-muted);">5,000</div>
+              <div style="font-size:.75rem; color:var(--text-muted); margin:.2rem 0;">Control Group</div>
+              <p style="font-size:.78rem; color:var(--text-muted);">Randomly selected non-DD contracts — no outreach</p>
+            </div>
+          </div>
+          <div style="margin-top:.9rem; padding-top:.7rem; border-top:1px solid var(--border);">
+            <p style="font-size:.82rem;"><strong>Duration:</strong> 90 days</p>
+            <p style="font-size:.82rem; margin-top:.3rem;"><strong>Success metric:</strong> Δ conversion rate (treatment − control)</p>
+            <p style="font-size:.82rem; margin-top:.3rem;"><strong>Output:</strong> Calibrate model threshold, retraining trigger</p>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="card">
+          <p style="font-size:.78rem; color:var(--text-muted); margin-bottom:.5rem; text-transform:uppercase; letter-spacing:.8px;">Why A Controlled Pilot First</p>
+          <ul class="clean">
+            <li>Validates predicted lift against <strong>actual campaign response</strong> before full portfolio rollout</li>
+            <li>Avoids burning marketing budget on low-probability contracts</li>
+            <li>Generates labelled response data for <strong>uplift modelling</strong> in Phase 2</li>
+            <li>Allows threshold calibration — should the cut-off be 50%, 30%, or 70%?</li>
+            <li>Builds internal confidence in the model before CFO-level decisions</li>
+          </ul>
+        </div>
+        <div class="highlight-box" style="margin-top:.7rem;">
+          <strong style="font-size:.85rem;">Expected economic signal:</strong>
+          <p style="font-size:.82rem; margin-top:.25rem;">
+            If the Top 5K group converts at even 15% vs. 5% in control,
+            that is 500 new direct debit contracts from a single campaign cycle.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 17 · SEGMENT STRATEGY
+═══════════════════════════════════════════════════════ -->
+<section class="slide-body">
+  <h3>Recommendations</h3>
+  <h2>Segment-Level Campaign Strategy</h2>
+  <div class="divider"></div>
+  <div class="content">
+    <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:.8rem; margin-bottom:.9rem;">
+      <div class="card-sm">
+        <p style="font-size:.72rem; color:var(--allianz-sky); text-transform:uppercase; letter-spacing:.8px; margin-bottom:.35rem;">Retail Individuals</p>
+        <p style="font-size:.82rem;">Non-monthly payers are the most natural conversion target. Already comfortable with recurring digital payments. <strong>Direct outreach</strong> via email / app notification is most effective.</p>
+      </div>
+      <div class="card-sm">
+        <p style="font-size:.72rem; color:var(--allianz-sky); text-transform:uppercase; letter-spacing:.8px; margin-bottom:.35rem;">SME &amp; Mid-Corp</p>
+        <p style="font-size:.82rem;">Finance-driven — prefer invoice control. Approach via <strong>account managers and brokers</strong>. Messaging should focus on reduced admin workload and payment certainty, not convenience.</p>
+      </div>
+      <div class="card-sm">
+        <p style="font-size:.72rem; color:var(--allianz-sky); text-transform:uppercase; letter-spacing:.8px; margin-bottom:.35rem;">Quarterly Payers</p>
+        <p style="font-size:.82rem;">Already accept periodic auto-payment — strongest next-step conversion pool. Target at <strong>renewal</strong> with a single-click DD switch offer.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <p style="font-size:.78rem; color:var(--text-muted); margin-bottom:.5rem; text-transform:uppercase; letter-spacing:.8px;">Broker Engagement Strategy</p>
+      <div class="grid-2" style="gap:.8rem;">
+        <ul class="clean">
+          <li>Share <strong>per-broker DD conversion dashboards</strong> benchmarked against market average</li>
+          <li>Train brokers to raise DD at policy <strong>renewal conversations</strong></li>
+        </ul>
+        <ul class="clean">
+          <li>Introduce <strong>quality service incentives</strong> tied to DD adoption rate per broker</li>
+          <li>Auto &amp; Property lines: highest structural potential — prioritise these lines in broker briefings</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 18 · SECTION BREAK — LIMITATIONS
+═══════════════════════════════════════════════════════ -->
+<section class="slide-section">
+  <div class="section-number">05</div>
+  <h2>Limitations &amp; Next Steps</h2>
+  <p>Known constraints, risk factors, and the roadmap to production.</p>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 19 · LIMITATIONS
+═══════════════════════════════════════════════════════ -->
+<section class="slide-body">
+  <h3>Limitations &amp; Next Steps</h3>
+  <h2>Known Limitations</h2>
+  <div class="divider"></div>
+  <div class="content">
+    <div class="grid-2" style="gap:.8rem;">
+      <div class="card-sm" style="border-left:3px solid var(--accent-yellow);">
+        <strong style="font-size:.85rem; color:var(--accent-yellow);">Payment Frequency Leakage</strong>
+        <p style="font-size:.8rem; margin-top:.3rem; color:var(--text-muted);">Monthly → DD correlation reflects a business rule, not a learnable behavioural signal. Strategy A results should be interpreted with this caveat. Strategy B (AUC 75.56%) is the true measure of voluntary adoption predictability.</p>
+      </div>
+      <div class="card-sm" style="border-left:3px solid var(--accent-orange);">
+        <strong style="font-size:.85rem; color:var(--accent-orange);">Static Dataset Snapshot</strong>
+        <p style="font-size:.8rem; margin-top:.3rem; color:var(--text-muted);">The model reflects one point in time. Client behaviour, product mix, and broker portfolios evolve. Quarterly retraining is required to maintain predictive power.</p>
+      </div>
+      <div class="card-sm" style="border-left:3px solid var(--accent-red);">
+        <strong style="font-size:.85rem; color:var(--accent-red);">No Campaign Response History</strong>
+        <p style="font-size:.8rem; margin-top:.3rem; color:var(--text-muted);">We predict propensity to use DD — not incremental lift from outreach. A true uplift model requires A/B test outcomes, which the pilot will generate.</p>
+      </div>
+      <div class="card-sm" style="border-left:3px solid var(--accent-red);">
+        <strong style="font-size:.85rem; color:var(--accent-red);">Broker_cor Data Quality</strong>
+        <p style="font-size:.8rem; margin-top:.3rem; color:var(--text-muted);">Values up to 6 × 10¹⁶ indicate extraction/encoding errors. P95 cap is a pragmatic workaround — the data engineering team should investigate the root cause.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 20 · NEXT STEPS
+═══════════════════════════════════════════════════════ -->
+<section class="slide-body">
+  <h3>Limitations &amp; Next Steps</h3>
+  <h2>Roadmap to Production</h2>
+  <div class="divider"></div>
+  <div class="content">
+    <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:.6rem; text-align:center; margin-bottom:1rem;">
+      <div class="card-sm">
+        <div style="font-size:1.3rem; margin-bottom:.3rem;">📊</div>
+        <strong style="font-size:.78rem;">SHAP Analysis</strong>
+        <p style="font-size:.72rem; color:var(--text-muted); margin-top:.2rem;">Individual contract-level explanations for broker conversations</p>
+      </div>
+      <div class="card-sm">
+        <div style="font-size:1.3rem; margin-bottom:.3rem;">🧪</div>
+        <strong style="font-size:.78rem;">Uplift Modelling</strong>
+        <p style="font-size:.72rem; color:var(--text-muted); margin-top:.2rem;">True causal model after A/B pilot data is collected</p>
+      </div>
+      <div class="card-sm">
+        <div style="font-size:1.3rem; margin-bottom:.3rem;">⚙️</div>
+        <strong style="font-size:.78rem;">Hyperparameter Tuning</strong>
+        <p style="font-size:.72rem; color:var(--text-muted); margin-top:.2rem;">GridSearchCV / Optuna on XGBoost and RF</p>
+      </div>
+      <div class="card-sm">
+        <div style="font-size:1.3rem; margin-bottom:.3rem;">🚀</div>
+        <strong style="font-size:.78rem;">API Deployment</strong>
+        <p style="font-size:.72rem; color:var(--text-muted); margin-top:.2rem;">FastAPI or Azure ML / AWS SageMaker endpoint</p>
+      </div>
+      <div class="card-sm">
+        <div style="font-size:1.3rem; margin-bottom:.3rem;">🔄</div>
+        <strong style="font-size:.78rem;">Quarterly Retraining</strong>
+        <p style="font-size:.72rem; color:var(--text-muted); margin-top:.2rem;">Scheduled refresh as new contract data accumulates</p>
+      </div>
+    </div>
+
+    <div class="highlight-box">
+      <div class="grid-2" style="gap:.8rem;">
+        <div>
+          <strong>Model artefact</strong>
+          <p style="font-size:.82rem; margin-top:.2rem;">XGBoost pipeline serialised with <code>joblib</code> — includes all preprocessing steps. Ready for integration into the Allianz Data Platform.</p>
+        </div>
+        <div>
+          <strong>Strategy B model</strong>
+          <p style="font-size:.82rem; margin-top:.2rem;">Secondary model (no frequency features) preserved separately for voluntary adoption scoring and broker insight dashboards.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 21 · CLOSING / CTA
+═══════════════════════════════════════════════════════ -->
+<section class="slide-body" style="background: radial-gradient(ellipse at 30% 60%, rgba(0,121,192,.2) 0%, transparent 60%);">
+  <h3>Conclusion</h3>
+  <h2>Business Value &amp; Recommended Next Action</h2>
+  <div class="divider"></div>
+  <div class="content">
+    <div class="grid-2" style="gap:1.2rem;">
+      <div>
+        <div class="card" style="margin-bottom:.8rem;">
+          <p style="font-size:.78rem; color:var(--text-muted); margin-bottom:.6rem; text-transform:uppercase; letter-spacing:.8px;">What This Model Enables</p>
+          <ul class="clean">
+            <li><strong>Cash-flow predictability</strong> for the Finance team</li>
+            <li><strong>Reduced manual collection costs</strong> for Operations</li>
+            <li><strong>Shorter receivables cycle</strong> for Treasury</li>
+            <li><strong>Broker empowerment</strong> with data-driven client conversations</li>
+            <li><strong>Better customer experience</strong> through frictionless automatic premium payment</li>
+          </ul>
+        </div>
+      </div>
+      <div>
+        <div class="highlight-box" style="margin-bottom:.8rem;">
+          <strong>Recommended Next Action</strong>
+          <p style="font-size:.85rem; margin-top:.4rem; line-height:1.7;">
+            Launch the <strong>90-day controlled pilot</strong>: contact the top 5,000
+            scored contracts and compare real conversion against a 5,000-contract control group.
+            This validates economic ROI before committing to full-portfolio rollout
+            and generates the data needed for Phase 2 uplift modelling.
+          </p>
+        </div>
+        <div class="card" style="text-align:center;">
+          <div class="metric-big" style="color:var(--accent-green);">97.87%</div>
+          <div class="metric-label">XGBoost ROC-AUC</div>
+          <div style="margin-top:.6rem; font-size:.8rem; color:var(--text-muted);">Across 452,222 contracts · 5 models compared · CRISP-DM</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDE 22 · APPENDIX LABEL
+═══════════════════════════════════════════════════════ -->
+<section class="slide-section">
+  <div class="section-number" style="font-size:3rem;">Q&amp;A</div>
+  <h2>Questions &amp; Discussion</h2>
+  <p>Technical details, methodology choices, and next steps are open for review.</p>
+  <div style="margin-top:1.5rem; display:flex; gap:.7rem; justify-content:center; flex-wrap:wrap;">
+    <span class="chip chip-blue">Notebook: allianz-predict-direct-debit.ipynb</span>
+    <span class="chip chip-green">Model: best_model.joblib</span>
+  </div>
+</section>
+
+</div><!-- /slides -->
+</div><!-- /reveal -->
+
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script>
+  Reveal.initialize({
+    hash: true,
+    slideNumber: 'c/t',
+    progress: true,
+    controls: true,
+    center: false,
+    transition: 'fade',
+    transitionSpeed: 'fast',
+    backgroundTransition: 'fade',
+    width: 1200,
+    height: 675,
+    margin: 0.04,
+    minScale: 0.2,
+    maxScale: 2.0,
+    plugins: [],
+  });
+</script>
+</body>
+</html>
