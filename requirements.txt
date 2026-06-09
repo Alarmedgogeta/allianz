@@ -1,5 +1,3 @@
-scikit-learn>=1.3.0
-xgboost>=1.7.0
-pandas>=2.0.0
-numpy>=1.24.0
-joblib>=1.3.0
+# Python dependencies for the standalone prediction-api service (deployed to Railway).
+# See prediction-api/requirements.txt for the actual service dependencies.
+# This file is intentionally empty so Vercel does not install ML packages.
