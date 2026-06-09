@@ -41,5 +41,4 @@ yarn-error.log*
 next-env.d.ts
 
 # large model/data files
-*.pkl
 *.xlsx
