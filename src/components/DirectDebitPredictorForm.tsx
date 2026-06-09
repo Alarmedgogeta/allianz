@@ -280,15 +280,19 @@ const INITIAL_FORM: FormState = {
 export interface DirectDebitPredictorFormProps {
   /** Override the prediction endpoint. Defaults to '/api/predict'. */
   apiEndpoint?: string;
+  /** Render field groups as divs when embedding inside another section-based UI. */
+  useDivSections?: boolean;
 }
 
 export function DirectDebitPredictorForm({
   apiEndpoint = '/api/predict',
+  useDivSections = false,
 }: DirectDebitPredictorFormProps) {
   const [form, setForm] = useState<FormState>(INITIAL_FORM);
   const [result, setResult] = useState<PredictionResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const FieldGroup = useDivSections ? 'div' : 'section';
 
   function handleText(e: ChangeEvent<HTMLInputElement>) {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -337,7 +341,7 @@ export function DirectDebitPredictorForm({
     <div className="space-y-5">
       <form onSubmit={handleSubmit} noValidate className="space-y-5">
         {/* ── Información de la Póliza ── */}
-        <section className="rounded-xl border border-slate-100 bg-white p-6 shadow-sm">
+        <FieldGroup className="predictor-group rounded-xl border border-slate-100 bg-white p-6 shadow-sm">
           <h2 className="mb-5 text-xs font-semibold uppercase tracking-widest text-slate-400">
             Información de la Póliza
           </h2>
@@ -381,10 +385,10 @@ export function DirectDebitPredictorForm({
               onChange={handleSelect}
             />
           </div>
-        </section>
+        </FieldGroup>
 
         {/* ── Información del Cliente ── */}
-        <section className="rounded-xl border border-slate-100 bg-white p-6 shadow-sm">
+        <FieldGroup className="predictor-group rounded-xl border border-slate-100 bg-white p-6 shadow-sm">
           <h2 className="mb-5 text-xs font-semibold uppercase tracking-widest text-slate-400">
             Información del Cliente
           </h2>
@@ -425,10 +429,10 @@ export function DirectDebitPredictorForm({
               onChange={handleSelect}
             />
           </div>
-        </section>
+        </FieldGroup>
 
         {/* ── Información del Mediador ── */}
-        <section className="rounded-xl border border-slate-100 bg-white p-6 shadow-sm">
+        <FieldGroup className="predictor-group rounded-xl border border-slate-100 bg-white p-6 shadow-sm">
           <h2 className="mb-5 text-xs font-semibold uppercase tracking-widest text-slate-400">
             Información del Mediador
           </h2>
@@ -463,7 +467,7 @@ export function DirectDebitPredictorForm({
               onChange={handleSelect}
             />
           </div>
-        </section>
+        </FieldGroup>
 
         {/* Submit */}
         <button
