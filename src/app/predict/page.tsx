@@ -25,9 +25,7 @@ export default function PredictPage() {
           </p>
         </div>
 
-        <DirectDebitPredictorForm
-          apiEndpoint={`${process.env.NEXT_PUBLIC_PREDICT_API_URL ?? ''}/api/predict`}
-        />
+        <DirectDebitPredictorForm />
       </div>
     </div>
   );
